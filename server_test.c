@@ -96,13 +96,15 @@ void main(int argc, char *argv[])
 
     // argv[0] holds the program's name. We use this to label error
     // reports.
-    progname=argv[0];
+    progname = argv[0];
 
-    // Create a UDP socket (an Internet datagram socket). AF_INET
-    // means Internet protocols and SOCK_DGRAM means UDP. 0 is an
-    // unused flag byte. A negative value is returned on error.
+    // Create a UDP socket (an Internet datagram socket) 
+    //      AF_INET means Internet protocols 
+    //      SOCK_DGRAM means UDP
+    //      0 is an unused flag byte 
+    // A negative value is returned on error.
     if((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-        printf("%s: can't open datagram socket\n",progname);
+        printf("%s: can't open datagram socket\n", progname);
         exit(1); 
     }
 
@@ -111,7 +113,7 @@ void main(int argc, char *argv[])
         
     // To use the socket created, we must assign to it a local IP
     // address and a UDP port number, so that the client can send data
-    // to it. To do this, we fisrt prepare a sockaddr structure.
+    // to it. To do this, we first prepare a sockaddr structure.
 
     // The bzero function initializes the whole structure to zeroes.
     bzero((char *) &serv_addr, sizeof(serv_addr));
@@ -132,7 +134,7 @@ void main(int argc, char *argv[])
     // We must use a specific port for our server for the client to
     // send data to (a well-known port).
 
-    serv_addr.sin_port        = htons(SERV_UDP_PORT);
+    serv_addr.sin_port = htons(SERV_UDP_PORT);
 
     // We initialize the socket pointed to by sockfd by binding to it
     // the address and port information from serv_addr. Note that we
