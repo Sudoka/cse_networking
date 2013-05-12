@@ -1,0 +1,9 @@
+sendto()
+recvfrom()
+close()
+socket()
+bind()
+
+
+bzero
+
