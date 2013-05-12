@@ -28,6 +28,12 @@ void dg_echo(int sockfd)
     // This structure receives the client's address whenever a
     // datagram arrives, so it needs no initialization.
     
+/*
+    struct sockaddr {
+        unsigned short    sa_family;    // address family, AF_xxx
+        char              sa_data[14];  // 14 bytes of protocol address
+    };
+*/
     struct sockaddr pcli_addr;
     
     // Temporary variables, counters and buffers.
@@ -91,7 +97,20 @@ void main(int argc, char *argv[])
     
     // The Internet specific address structure. We must cast this into
     // a general purpose address structure when setting up the socket.
+    /*
+        // IPv4 AF_INET sockets:
 
+        struct sockaddr_in {
+            short            sin_family;   // e.g. AF_INET, AF_INET6
+            unsigned short   sin_port;     // e.g. htons(3490)
+            struct in_addr   sin_addr;     // see struct in_addr, below
+            char             sin_zero[8];  // zero this if you want to
+        };
+
+        struct in_addr {
+            unsigned long s_addr;          // load with inet_pton()
+        };
+    */
     struct sockaddr_in serv_addr;
 
     // argv[0] holds the program's name. We use this to label error

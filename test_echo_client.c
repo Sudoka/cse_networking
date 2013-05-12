@@ -39,8 +39,8 @@ void dg_cli(int sockfd, struct sockaddr * pserv_addr, int servlen)
     // sendline buffer (up to MAXLINE bytes).
     while(fgets(sendline, MAXLINE, stdin) != NULL) {
         
-    // Find the string's length to pass it as a parameter to the send
-    // calls (excluding the null in the end).
+        // Find the string's length to pass it as a parameter to the send
+        // calls (excluding the null in the end).
         n = strlen(sendline); 
         
         /*  
