@@ -1,9 +1,126 @@
+TODO
+--------------------------------------------------------------------------------
+
+
+Notes
+--------------------------------------------------------------------------------
+- Network Order = Big Endian
+- Store numeric fields in Little Endian in struct, convert to Big Endian when populating the message field
+
+Functions
+--------------------------------------------------------------------------------
 sendto()
 recvfrom()
 close()
 socket()
 bind()
 
+bzero()
+fputs()
 
-bzero
+bcopy()
+
+htonl() / ntohl() - long integers
+htons() / ntohs() - short integers
+
+
+Packet Types
+--------------------------------------------------------------------------------
+
+  opcode  operation
+  ------  ---------
+    1     Read request (RRQ)
+    2     Write request (WRQ)
+    3     Data (DATA)
+    4     Acknowledgment (ACK)
+    5     Error (ERROR)
+
+
+TFTP Formats
+------------
+
+   Type   Op #     Format without header
+
+          2 bytes    string   1 byte     string   1 byte
+          -----------------------------------------------
+   RRQ/  | 01/02 |  Filename  |   0  |    Mode    |   0  |
+   WRQ    -----------------------------------------------
+
+          2 bytes    2 bytes       n bytes
+          ---------------------------------
+   DATA  | 03    |   Block #  |    Data    |
+          ---------------------------------
+
+          2 bytes    2 bytes
+          -------------------
+   ACK   | 04    |   Block #  |
+          --------------------
+
+          2 bytes  2 bytes        string    1 byte
+          ----------------------------------------
+   ERROR | 05    |  ErrorCode |   ErrMsg   |   0  |
+          ----------------------------------------
+
+
+
+Read request (RRQ) / Write request (WRQ)
+--------------------------------------------------------------------------------
+
+    2 bytes     string    1 byte     string   1 byte
+    ------------------------------------------------
+   | Opcode |  Filename  |   0  |    Mode    |   0  |
+    ------------------------------------------------
+
+512 bytes
+    - 2 (opcode)
+    - 500 (filename)
+    - 1 (filename NUL)
+    - 8 (mode)
+    - 1 (mode NUL)
+
+
+
+
+Data (DATA)
+--------------------------------------------------------------------------------
+
+    2 bytes     2 bytes      n bytes
+    ----------------------------------
+   | Opcode |   Block #  |   Data     |
+    ----------------------------------
+
+
+Acknowledgment (ACK)
+--------------------------------------------------------------------------------
+
+    2 bytes     2 bytes
+    ---------------------
+   | Opcode |   Block #  |
+    ---------------------
+
+
+Error (ERROR)
+--------------------------------------------------------------------------------
+
+
+    2 bytes     2 bytes      string    1 byte
+    -----------------------------------------
+   | Opcode |  ErrorCode |   ErrMsg   |   0  |
+    -----------------------------------------
+
+Error Codes
+--------------------------------------------------------------------------------
+
+   Value     Meaning
+   -----     -------
+   0         Not defined, see error message (if any).
+   1         File not found.
+   2         Access violation.
+   3         Disk full or allocation exceeded.
+   4         Illegal TFTP operation.
+   5         Unknown transfer ID.
+   6         File already exists.
+   7         No such user.
+
+
 
