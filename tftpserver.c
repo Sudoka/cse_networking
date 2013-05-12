@@ -6,6 +6,8 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+#include "tftp-packet.h"
+
 #define SERV_UDP_PORT   12345
 #define SERV_HOST_ADDR  "127.0.0.1"
 
@@ -42,6 +44,8 @@ void main(int argc, char *argv[])
 {
     int sockfd;
     struct sockaddr_in serv_addr;
+
+    hello_world();
 
     progname = argv[0];
 
