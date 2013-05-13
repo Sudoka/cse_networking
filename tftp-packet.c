@@ -336,3 +336,55 @@ void write_debug(char * message)
 
 
 */
+
+//================================================================================
+//
+//  process_cl_args 
+//
+//================================================================================
+/*
+void process_cl_args(int argc, char **argv)
+{
+    char * r_value = NULL;
+    char * w_value = NULL;
+    int index;
+    int opt;
+     
+    opterr = 0;
+     
+    while ((opt = getopt (argc, argv, "r:w:")) != -1)
+        switch (opt) {
+            case 'r':
+                r_value = optarg;
+                break;
+            case 'w':
+                w_value = optarg;
+                break;
+            case '?':
+                if(optopt == 'r') {
+                    fprintf(stderr, "Option -%c requires an argument.\n", optopt);
+                }
+                if(optopt == 'w') {
+                    fprintf(stderr, "Option -%c requires an argument.\n", optopt);
+                }
+                else if(isprint(optopt)) {
+                    fprintf (stderr, "Unknown option `-%c'.\n", optopt);
+                }
+                else {
+                    fprintf (stderr, "Unknown option character `\\x%x'.\n", optopt);
+                }
+            default:
+        }
+    }
+     
+    printf ("aflag = %d, bflag = %d, cvalue = %s\n", aflag, bflag, cvalue);
+     
+    for (index = optind; index < argc; index++)
+        printf("Non-option argument %s\n", argv[index]);
+        return 0;
+    }
+}
+
+*/
+
+

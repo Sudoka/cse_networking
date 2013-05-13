@@ -10,6 +10,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <string.h>
+#include <unistd.h>
 
 #define SERV_UDP_PORT   12345
 #define SERV_HOST_ADDR  "127.0.0.1"
@@ -84,9 +85,48 @@ void main(int argc, char *argv[])
     
     struct sockaddr_in cli_addr, serv_addr;
     
-    client_init();
+
+    char op;
+    char * filename = NULL;
+    int index;
+    int opt;
+
+    opterr = 0;
+
+    while ((opt = getopt (argc, argv, "r:w:")) != -1) {
+        switch(opt) {
+            case 'r':
+                op = 'r';
+                filename = optarg;
+                break;
+            case 'w':
+                op = 'w';
+                filename = optarg;
+                break;
+            case '?':
+                if(optopt == 'r') {
+                    fprintf(stderr, "Option -%c requires an argument.\n", optopt);
+                }
+                else if(optopt == 'w') {
+                    fprintf(stderr, "Option -%c requires an argument.\n", optopt);
+                }
+                else if(isprint(optopt)) {
+                    fprintf (stderr, "Unknown option `-%c'.\n", optopt);
+                }
+                else {
+                    fprintf (stderr, "Unknown option character `\\x%x'.\n", optopt);
+                }
+                exit(0);
+                break;
+        }
+    }
+
+    printf("operation: %c\n", op);
+    printf("filename: %s\n", filename);
 
     progname = argv[0];
+
+    client_init();
 
     bzero((char *) &serv_addr, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
