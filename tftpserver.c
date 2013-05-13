@@ -1,6 +1,11 @@
+//============================================================================== //
+//          tftpserver.c
+//
+//==============================================================================
+
 #include <stdio.h>
 #include <stdlib.h>
-#include <strings.h>
+#include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -11,41 +16,32 @@
 #define SERV_UDP_PORT   12345
 #define SERV_HOST_ADDR  "127.0.0.1"
 
+#define DEBUG 0
+
 char *progname;
 
 #define MAXMESG 2048            // Size of maximum message to received.
 
-void dg_echo(int sockfd)
-{
-    struct sockaddr pcli_addr;
-    
-    int    n, clilen;
-    char   mesg[MAXMESG];
+// Function prototypes
+void dg_echo(int sockfd);
+void process_message(char * message, int n);
+void write_debug(char * message);
+unsigned short read_message_opcode(char * message);
+Packet * create_packet_from_message(char * message);
+void process_message(char * message, int n);
+void server_init();
 
-    for( ; ; ) {
-
-        clilen = sizeof(struct sockaddr);
-
-        n = recvfrom(sockfd, mesg, MAXMESG, 0, &pcli_addr, &clilen);
-        
-        if(n < 0) {
-            printf("%s: recvfrom error\n",progname);
-            exit(3);
-        }
-
-        if(sendto(sockfd, mesg, n, 0, &pcli_addr, clilen) != n) {
-            printf("%s: sendto error\n",progname);
-            exit(4);
-        }
-    }
-}
-
+//================================================================================
+//
+//  main
+//
+//================================================================================
 void main(int argc, char *argv[])
 {
     int sockfd;
     struct sockaddr_in serv_addr;
 
-    hello_world();
+    server_init();
 
     progname = argv[0];
 
@@ -70,3 +66,65 @@ void main(int argc, char *argv[])
     dg_echo(sockfd);
 
 }
+
+//================================================================================
+//
+//  dg_echo 
+//
+//================================================================================
+void dg_echo(int sockfd)
+{
+    struct sockaddr pcli_addr;
+    
+    int    n, clilen;
+    char   mesg[MAXMESG];
+
+    for( ; ; ) {
+
+        clilen = sizeof(struct sockaddr);
+
+        n = recvfrom(sockfd, mesg, MAXMESG, 0, &pcli_addr, &clilen);
+
+        if(n < 0) {
+            printf("%s: recvfrom error\n",progname);
+            exit(3);
+        }
+        else {
+            printf("Request received: %d bytes\n", n);
+            process_message(mesg, n);
+
+        }
+
+        if(sendto(sockfd, mesg, n, 0, &pcli_addr, clilen) != n) {
+            printf("%s: sendto error\n",progname);
+            exit(4);
+        }
+
+        printf("Request completed.\n\n");
+    }
+}
+
+//================================================================================
+//
+//  process_message 
+//
+//================================================================================
+void process_message(char * message, int n)
+{
+    Packet * packet = create_packet_from_message(message);
+    memcpy(packet->message, message, n);
+    print_packet(packet);
+    //unsigned short opcode = read_message_opcode(message);
+    //printf("\topcode: %u\n", opcode);
+
+}
+
+
+void server_init()
+{
+    printf("Group #06 Server\n");
+    printf("Member: James Mack\n");
+    printf("tftp server running, waiting for requests...\n");
+
+}
+

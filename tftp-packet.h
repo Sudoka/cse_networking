@@ -1,3 +1,9 @@
+//==============================================================================
+//
+//          tftp-packet.h
+//
+//==============================================================================
+
 #define SERVER_PORT 6006
 
 #define MESSAGE_SIZE    516
@@ -71,9 +77,23 @@ typedef struct {
 
 } ERROR_Packet;
 
-void hello_world();
 void Packet_init(Packet * thisP, unsigned short opcode);
+void RWRQ_Packet_construct_msg(RWRQ_Packet * thisP, unsigned short opcode, char * message);
 void RWRQ_Packet_construct(RWRQ_Packet * thisP, unsigned short opcode, char * fname, char * mode);
+void DATA_Packet_construct_msg(DATA_Packet * thisP, unsigned short opcode, char * message);
 void DATA_Packet_construct(DATA_Packet * thisP, unsigned short opcode, unsigned short b_num, char * data);
+void ACK_Packet_construct_msg(ACK_Packet * thisP, unsigned short opcode, char * message);
 void ACK_Packet_construct(ACK_Packet * thisP, unsigned short opcode, unsigned short b_num);
+void ERROR_Packet_construct_msg(ERROR_Packet * thisP, unsigned short opcode, char * message);
 void ERROR_Packet_construct(ERROR_Packet * thisP, unsigned short opcode, unsigned short e_code, char * error_msg);
+unsigned short read_message_opcode(char * message);
+unsigned short read_message_block_num(char * message);
+unsigned short read_message_error_code(char * message);
+char * read_message_filename(char * message);
+char * read_message_mode(char * message);
+char * read_message_data(char * message);
+char * read_message_error_msg(char * message);
+void write_debug(char * message);
+void print_packet(Packet * packet);
+
+

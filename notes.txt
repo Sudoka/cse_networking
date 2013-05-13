@@ -71,14 +71,22 @@ Read request (RRQ) / Write request (WRQ)
    | Opcode |  Filename  |   0  |    Mode    |   0  |
     ------------------------------------------------
 
-512 bytes
+516 bytes
     - 2 (opcode)
-    - 500 (filename)
+    - 504 (filename)
     - 1 (filename NUL)
     - 8 (mode)
     - 1 (mode NUL)
 
 
+Test RRQ Packet:
+    01666f6f2e747874006f6374657400
+
+    char * packet = 0x01666f6f2e747874006f6374657400;
+
+    opcode:   01
+    filename: 666f6f2e74787400
+    mode:     6f6374657400
 
 
 Data (DATA)
