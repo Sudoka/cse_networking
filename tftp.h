@@ -1,16 +1,23 @@
 //==============================================================================
 //
-//          tftp-packet.h
+//          tftp.h
 //
 //==============================================================================
 
-#define SERVER_PORT 6006
+#define SERVER_PORT 60006
+#define TIMEOUT     10
 
 #define MESSAGE_SIZE    516
 #define DATA_SIZE       512
 #define FILENAME_LENGTH 500
 #define MODE_LENGTH     8
 #define ERROR_LENGTH    512
+
+#define STATE_READY         700
+#define STATE_ACK_SENT      701
+#define STATE_WAITING_ACK   702
+#define STATE_WAITING_AC    701
+#define STATE_WAITING_A     701
 
 //================================================================================
 // Packet
