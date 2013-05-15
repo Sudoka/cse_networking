@@ -44,19 +44,17 @@ char test_packet5[] = {0x00, 0x05, 0x00, 0x01, 0x46, 0x69, 0x6c, 0x65, 0x20, 0x6
 void client_init()
 {
     printf("Group #06 Client\n");
-    printf("Member: James Mack\n");
+    printf("Members: James Mack\n");
 }
 
 
-void dg_cli(int sockfd, struct sockaddr * pserv_addr, int servlen)
+void dg_cli(int sockfd, struct sockaddr * pserv_addr, int servlen, char op, char * filename)
 {
-    int n;
+    int n, i;
     char sendline[MAXLINE], recvline[MAXLINE + 1];
+    int op_complete = 0;
 
-    //while(fgets(sendline, MAXLINE, stdin) != NULL) {
-
-
-        //n = strlen(sendline); 
+   // while(!op_complete) {
         
         n = sendto(sockfd, test_packet5, 516, 0, pserv_addr, servlen);
         /*
@@ -66,6 +64,7 @@ void dg_cli(int sockfd, struct sockaddr * pserv_addr, int servlen)
         }
         */
 
+
         n = recvfrom(sockfd, recvline, MAXLINE, 0, NULL, NULL);
 
         if(n < 0) {
@@ -74,7 +73,7 @@ void dg_cli(int sockfd, struct sockaddr * pserv_addr, int servlen)
         }
         
         recvline[n] = 0;
-        fputs(recvline, stdout);
+        //fputs(recvline, stdout);
     //}
 }
 
@@ -121,9 +120,6 @@ void main(int argc, char *argv[])
         }
     }
 
-    printf("operation: %c\n", op);
-    printf("filename: %s\n", filename);
-
     progname = argv[0];
 
     client_init();
@@ -151,7 +147,9 @@ void main(int argc, char *argv[])
         exit(2);
     }
 
-    dg_cli(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr));
+    printf("sending write request for file: %s\n", filename);
+
+    dg_cli(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr), op, filename);
 
     close(sockfd);
     exit(0);

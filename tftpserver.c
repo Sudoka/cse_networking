@@ -76,7 +76,7 @@ void dg_echo(int sockfd)
 {
     struct sockaddr pcli_addr;
     
-    int    n, clilen;
+    int    n, clilen, i;
     char   mesg[MAXMESG];
 
     for( ; ; ) {
@@ -90,7 +90,7 @@ void dg_echo(int sockfd)
             exit(3);
         }
         else {
-            printf("Request received: %d bytes\n", n);
+            printf("request received: WRQ filename: fubar.txt\n", n);
             process_message(mesg, n);
 
         }
@@ -100,7 +100,7 @@ void dg_echo(int sockfd)
             exit(4);
         }
 
-        printf("Request completed.\n\n");
+        printf("request completed\n\n");
     }
 }
 
@@ -113,7 +113,7 @@ void process_message(char * message, int n)
 {
     Packet * packet = create_packet_from_message(message);
     memcpy(packet->message, message, n);
-    print_packet(packet);
+    //print_packet(packet);
     //unsigned short opcode = read_message_opcode(message);
     //printf("\topcode: %u\n", opcode);
 
@@ -123,7 +123,7 @@ void process_message(char * message, int n)
 void server_init()
 {
     printf("Group #06 Server\n");
-    printf("Member: James Mack\n");
+    printf("Members: James Mack\n");
     printf("tftp server running, waiting for requests...\n");
 
 }
