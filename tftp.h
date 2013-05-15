@@ -84,6 +84,18 @@ typedef struct {
 
 } ERROR_Packet;
 
+//================================================================================
+// File_Container
+//================================================================================
+typedef struct {
+    FILE * fp;
+    int current_read;
+    char current_data[DATA_SIZE];
+} File_Container;
+
+//================================================================================
+// Functions
+//================================================================================
 void Packet_init(Packet * thisP, unsigned short opcode);
 void RWRQ_Packet_construct_msg(RWRQ_Packet * thisP, unsigned short opcode, char * message);
 void RWRQ_Packet_construct(RWRQ_Packet * thisP, unsigned short opcode, char * fname, char * mode);

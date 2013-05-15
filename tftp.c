@@ -267,6 +267,24 @@ char * read_message_error_msg(char * message)
 
 //================================================================================
 //
+//  file_open
+//
+//================================================================================
+char * file_open(char * message)
+{
+    char * error_msg = malloc(ERROR_LENGTH + 1);
+    
+    int offset; 
+    offset = strlen(message + 2) + 2 + 1;
+    strcpy(error_msg, message + (MESSAGE_SIZE - DATA_SIZE));
+
+    //printf("error_msg: %s\n", error_msg);
+
+    return error_msg;
+}
+
+//================================================================================
+//
 //  print_packet
 //
 //================================================================================
