@@ -304,9 +304,9 @@ int file_read_next(File_Container * this_file)
 //  file_write_next
 //
 //================================================================================
-int file_write_next(File_Container * this_file)
+int file_write_next(File_Container * this_file, int length)
 {
-    return fwrite(this_file->current_data, sizeof(char), DATA_SIZE, this_file->fp);
+    return fwrite(this_file->current_data, sizeof(char), length, this_file->fp);
 }
 
 //================================================================================
