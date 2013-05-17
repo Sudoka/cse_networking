@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include "tftp-packet.h"
+#include "tftp.h"
 
 //================================================================================
 //
@@ -270,18 +270,63 @@ char * read_message_error_msg(char * message)
 //  file_open
 //
 //================================================================================
-char * file_open(char * message)
+File_Container * file_open(char * filename, char * op)
 {
-    char * error_msg = malloc(ERROR_LENGTH + 1);
+    File_Container * new_file = malloc(sizeof(File_Container));
+    memset(new_file, 0, sizeof(File_Container));
+
+    new_file->fp = fopen(filename, op);
+    new_file->count = 0; 
+
+    if(new_file->fp == NULL) {
+        printf("Failed to open file %s\n", filename);
+        exit(1);
+    }
     
-    int offset; 
-    offset = strlen(message + 2) + 2 + 1;
-    strcpy(error_msg, message + (MESSAGE_SIZE - DATA_SIZE));
-
-    //printf("error_msg: %s\n", error_msg);
-
-    return error_msg;
+    return new_file;
 }
+
+//================================================================================
+//
+//  file_read_next
+//
+//================================================================================
+int file_read_next(File_Container * this_file)
+{
+    memset(this_file->current_data, 0, sizeof(this_file->current_data));
+
+    return fread(this_file->current_data, sizeof(char), DATA_SIZE, this_file->fp);
+
+}
+
+//================================================================================
+//
+//  file_write_next
+//
+//================================================================================
+int file_write_next(File_Container * this_file)
+{
+    return fwrite(this_file->current_data, sizeof(char), DATA_SIZE, this_file->fp);
+}
+
+//================================================================================
+//
+//  file_get_size
+//
+//================================================================================
+int file_get_size(File_Container * this_file)
+{
+    int current, size;
+
+    current = ftell(this_file->fp);
+    fseek(this_file->fp, 0, SEEK_END);
+    size = ftell(this_file->fp);
+
+    fseek(this_file->fp, current, SEEK_SET);
+
+    return size;
+}
+
 
 //================================================================================
 //

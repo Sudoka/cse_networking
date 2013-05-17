@@ -89,13 +89,15 @@ typedef struct {
 //================================================================================
 typedef struct {
     FILE * fp;
-    int current_read;
+    int count;
     char current_data[DATA_SIZE];
 } File_Container;
 
 //================================================================================
 // Functions
 //================================================================================
+
+// Packet
 void Packet_init(Packet * thisP, unsigned short opcode);
 void RWRQ_Packet_construct_msg(RWRQ_Packet * thisP, unsigned short opcode, char * message);
 void RWRQ_Packet_construct(RWRQ_Packet * thisP, unsigned short opcode, char * fname, char * mode);
@@ -105,6 +107,8 @@ void ACK_Packet_construct_msg(ACK_Packet * thisP, unsigned short opcode, char * 
 void ACK_Packet_construct(ACK_Packet * thisP, unsigned short opcode, unsigned short b_num);
 void ERROR_Packet_construct_msg(ERROR_Packet * thisP, unsigned short opcode, char * message);
 void ERROR_Packet_construct(ERROR_Packet * thisP, unsigned short opcode, unsigned short e_code, char * error_msg);
+
+// Message Parsing
 unsigned short read_message_opcode(char * message);
 unsigned short read_message_block_num(char * message);
 unsigned short read_message_error_code(char * message);
@@ -112,6 +116,14 @@ char * read_message_filename(char * message);
 char * read_message_mode(char * message);
 char * read_message_data(char * message);
 char * read_message_error_msg(char * message);
+
+// FILE
+File_Container * file_open(char * filename, char * op);
+int file_read_next(File_Container * this_file);
+int file_write_next(File_Container * this_file);
+int file_get_size(File_Container * this_file);
+
+// Utility
 void write_debug(char * message);
 void print_packet(Packet * packet);
 

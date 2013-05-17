@@ -11,6 +11,7 @@
 #include <arpa/inet.h>
 #include <string.h>
 #include <unistd.h>
+#include "tftp.h"
 
 #define SERV_UDP_PORT   12345
 #define SERV_HOST_ADDR  "127.0.0.1"
