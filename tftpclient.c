@@ -14,6 +14,7 @@
 #include <unistd.h>
 
 #include "tftp.h"
+char test_packet[] = {0x00, 0x04, 0x00, 0x01};
 
 void dg_cli(int sockfd, struct sockaddr * pserv_addr, int servlen, char op, char * filename);
 
@@ -100,7 +101,7 @@ void dg_cli(int sockfd, struct sockaddr * pserv_addr, int servlen, char op, char
         
         printf("sending message\n");
 
-        sendto(sockfd, test_packet5, MESSAGE_SIZE, 0, pserv_addr, servlen);
+        sendto(sockfd, test_packet, MESSAGE_SIZE, 0, pserv_addr, servlen);
 
         n = recvfrom(sockfd, recvline, MESSAGE_SIZE, 0, NULL, NULL);
 
