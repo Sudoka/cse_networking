@@ -6,6 +6,7 @@
 
 #define SERVER_PORT 60006
 #define TIMEOUT     10
+#define SERVER_ADDR "127.0.0.1"
 
 #define MESSAGE_SIZE    516
 #define DATA_SIZE       512
