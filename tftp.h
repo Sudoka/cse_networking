@@ -14,6 +14,14 @@
 #define MODE_LENGTH     8
 #define ERROR_LENGTH    512
 
+#define OP_RRQ   1
+#define OP_WRQ   2
+#define OP_DATA  3
+#define OP_ACK   4
+#define OP_ERROR 5
+
+#define MODE "octet"
+
 #define STATE_READY         700
 #define STATE_ACK_SENT      701
 #define STATE_WAITING_ACK   702
@@ -100,14 +108,14 @@ typedef struct {
 
 // Packet
 void Packet_init(Packet * thisP, unsigned short opcode);
-void RWRQ_Packet_construct_msg(RWRQ_Packet * thisP, unsigned short opcode, char * message);
-void RWRQ_Packet_construct(RWRQ_Packet * thisP, unsigned short opcode, char * fname, char * mode);
-void DATA_Packet_construct_msg(DATA_Packet * thisP, unsigned short opcode, char * message);
-void DATA_Packet_construct(DATA_Packet * thisP, unsigned short opcode, unsigned short b_num, char * data);
-void ACK_Packet_construct_msg(ACK_Packet * thisP, unsigned short opcode, char * message);
-void ACK_Packet_construct(ACK_Packet * thisP, unsigned short opcode, unsigned short b_num);
-void ERROR_Packet_construct_msg(ERROR_Packet * thisP, unsigned short opcode, char * message);
-void ERROR_Packet_construct(ERROR_Packet * thisP, unsigned short opcode, unsigned short e_code, char * error_msg);
+void RWRQ_Packet_construct_msg(Packet * thisP, unsigned short opcode, char * message);
+void RWRQ_Packet_construct(Packet * thisP, unsigned short opcode, char * fname, char * mode);
+void DATA_Packet_construct_msg(Packet * thisP, unsigned short opcode, char * message);
+void DATA_Packet_construct(Packet * thisP, unsigned short opcode, unsigned short b_num, char * data);
+void ACK_Packet_construct_msg(Packet * thisP, unsigned short opcode, char * message);
+void ACK_Packet_construct(Packet * thisP, unsigned short opcode, unsigned short b_num);
+void ERROR_Packet_construct_msg(Packet * thisP, unsigned short opcode, char * message);
+void ERROR_Packet_construct(Packet * thisP, unsigned short opcode, unsigned short e_code, char * error_msg);
 
 // Message Parsing
 Packet * create_packet_from_message(char * message);
@@ -120,7 +128,7 @@ char * read_message_data(char * message);
 char * read_message_error_msg(char * message);
 
 // FILE
-File_Container * file_open(char * filename, char * op);
+File_Container * file_open(char * filename, int opcode);
 int file_read_next(File_Container * this_file);
 int file_write_next(File_Container * this_file, int length);
 int file_get_size(File_Container * this_file);

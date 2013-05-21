@@ -49,18 +49,20 @@ void Packet_init(Packet * thisP, unsigned short opcode)
 //  RWRQ_Packet_construct 
 //
 //================================================================================
-void RWRQ_Packet_construct_msg(RWRQ_Packet * thisP, unsigned short opcode, char * message)
+void RWRQ_Packet_construct_msg(Packet * thisP, unsigned short opcode, char * message)
 {
-    thisP->opcode = opcode;        
-    strcpy(thisP->filename, read_message_filename(message));
-    strcpy(thisP->mode, read_message_mode(message));
+    RWRQ_Packet * packet = (RWRQ_Packet *) &thisP;
+    packet->opcode = opcode;        
+    strcpy(packet->filename, read_message_filename(message));
+    strcpy(packet->mode, read_message_mode(message));
 }
 
-void RWRQ_Packet_construct(RWRQ_Packet * thisP, unsigned short opcode, char * fname, char * mode)
+void RWRQ_Packet_construct(Packet * thisP, unsigned short opcode, char * fname, char * mode)
 {
-    thisP->opcode = opcode;        
-    strcpy(thisP->filename, fname);
-    strcpy(thisP->mode, mode);
+    RWRQ_Packet * packet = (RWRQ_Packet *) &thisP;
+    packet->opcode = opcode;        
+    strcpy(packet->filename, fname);
+    strcpy(packet->mode, mode);
 }
 
 //================================================================================
@@ -68,19 +70,21 @@ void RWRQ_Packet_construct(RWRQ_Packet * thisP, unsigned short opcode, char * fn
 //  DATA_Packet_construct 
 //
 //================================================================================
-void DATA_Packet_construct_msg(DATA_Packet * thisP, unsigned short opcode, char * message)
+void DATA_Packet_construct_msg(Packet * thisP, unsigned short opcode, char * message)
 {
-    thisP->opcode = opcode;        
-    thisP->block_num = read_message_block_num(message);        
-    memcpy(thisP->data, read_message_data(message), DATA_SIZE);
+    DATA_Packet * packet = (DATA_Packet *) &thisP;
+    packet->opcode = opcode;        
+    packet->block_num = read_message_block_num(message);        
+    memcpy(packet->data, read_message_data(message), DATA_SIZE);
 
 }
 
-void DATA_Packet_construct(DATA_Packet * thisP, unsigned short opcode, unsigned short b_num, char * data)
+void DATA_Packet_construct(Packet * thisP, unsigned short opcode, unsigned short b_num, char * data)
 {
-    thisP->opcode = opcode;        
-    thisP->block_num = b_num;        
-    strcpy(thisP->data, data);
+    DATA_Packet * packet = (DATA_Packet *) &thisP;
+    packet->opcode = opcode;        
+    packet->block_num = b_num;        
+    strcpy(packet->data, data);
 }
 
 //================================================================================
@@ -88,17 +92,19 @@ void DATA_Packet_construct(DATA_Packet * thisP, unsigned short opcode, unsigned 
 //  ACK_Packet_construct 
 //
 //================================================================================
-void ACK_Packet_construct_msg(ACK_Packet * thisP, unsigned short opcode, char * message)
+void ACK_Packet_construct_msg(Packet * thisP, unsigned short opcode, char * message)
 {
-    thisP->opcode = opcode;        
-    thisP->block_num = read_message_block_num(message);        
+    ACK_Packet * packet = (ACK_Packet *) &thisP;
+    packet->opcode = opcode;        
+    packet->block_num = read_message_block_num(message);        
 
 }
 
-void ACK_Packet_construct(ACK_Packet * thisP, unsigned short opcode, unsigned short b_num)
+void ACK_Packet_construct(Packet * thisP, unsigned short opcode, unsigned short b_num)
 {
-    thisP->opcode = opcode;        
-    thisP->block_num = b_num;        
+    ACK_Packet * packet = (ACK_Packet *) &thisP;
+    packet->opcode = opcode;        
+    packet->block_num = b_num;        
 }
 
 //================================================================================
@@ -106,19 +112,21 @@ void ACK_Packet_construct(ACK_Packet * thisP, unsigned short opcode, unsigned sh
 //  ERROR_Packet_construct 
 //
 //================================================================================
-void ERROR_Packet_construct_msg(ERROR_Packet * thisP, unsigned short opcode, char * message)
+void ERROR_Packet_construct_msg(Packet * thisP, unsigned short opcode, char * message)
 {
-    thisP->opcode = opcode;        
-    thisP->error_code = read_message_error_code(message);        
-    strcpy(thisP->error_message, read_message_error_msg(message));
+    ERROR_Packet * packet = (ERROR_Packet *) &thisP;
+    packet->opcode = opcode;        
+    packet->error_code = read_message_error_code(message);        
+    strcpy(packet->error_message, read_message_error_msg(message));
 
 }
 
-void ERROR_Packet_construct(ERROR_Packet * thisP, unsigned short opcode, unsigned short e_code, char * error_msg)
+void ERROR_Packet_construct(Packet * thisP, unsigned short opcode, unsigned short e_code, char * error_msg)
 {
-    thisP->opcode = opcode;        
-    thisP->error_code = e_code;        
-    strcpy(thisP->error_message, error_msg);
+    ERROR_Packet * packet = (ERROR_Packet *) &thisP;
+    packet->opcode = opcode;        
+    packet->error_code = e_code;        
+    strcpy(packet->error_message, error_msg);
 }
 
 
@@ -139,19 +147,19 @@ Packet * create_packet_from_message(char * message)
         case 1:
         case 2:
             new_packet = malloc(sizeof(RWRQ_Packet));
-            RWRQ_Packet_construct_msg( (RWRQ_Packet *) new_packet, opcode, message);
+            RWRQ_Packet_construct_msg(new_packet, opcode, message);
             break;
         case 3:
             new_packet = malloc(sizeof(DATA_Packet));
-            DATA_Packet_construct_msg( (DATA_Packet *) new_packet, opcode, message);
+            DATA_Packet_construct_msg(new_packet, opcode, message);
             break;
         case 4:
             new_packet = malloc(sizeof(ACK_Packet));
-            ACK_Packet_construct_msg( (ACK_Packet *) new_packet, opcode, message);
+            ACK_Packet_construct_msg(new_packet, opcode, message);
             break;
         case 5:
             new_packet = malloc(sizeof(ERROR_Packet));
-            ERROR_Packet_construct_msg( (ERROR_Packet *) new_packet, opcode, message);
+            ERROR_Packet_construct_msg(new_packet, opcode, message);
             break;
         default:
             break;
@@ -277,12 +285,22 @@ char * read_message_error_msg(char * message)
 //  file_open
 //
 //================================================================================
-File_Container * file_open(char * filename, char * op)
+File_Container * file_open(char * filename, int opcode)
 {
+    char op;
+    if(opcode == OP_RRQ)
+        op = 'r';
+    else if(opcode == OP_WRQ)
+        op = 'w';
+    else {
+        printf("Error: invalid operation\n");
+        exit(5);
+    }
+
     File_Container * new_file = malloc(sizeof(File_Container));
     memset(new_file, 0, sizeof(File_Container));
 
-    new_file->fp = fopen(filename, op);
+    new_file->fp = fopen(filename, &op);
     new_file->count = 0; 
 
     if(new_file->fp == NULL) {
@@ -393,7 +411,7 @@ int setup_socket(char * address, int port)
         exit(1);
     }
 
-    bzero((char *) &addr, sizeof(addr));
+    memset(&addr, 0, sizeof(addr));
     addr.sin_family      = AF_INET;
     if(address == 0) {
         addr.sin_addr.s_addr = htonl(INADDR_ANY);

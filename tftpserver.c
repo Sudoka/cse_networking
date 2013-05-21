@@ -14,6 +14,7 @@
 #include "tftp.h"
 
 // Function prototypes
+void dg_echo(int sockfd);
 void process_message(char * message, int n);
 
 //================================================================================
@@ -25,7 +26,7 @@ void main(int argc, char *argv[])
 {
     struct sockaddr_in serv_addr;
     struct sockaddr pcli_addr;
-    int    sock_fd, n, clilen, i;
+    int    sockfd, n, clilen, i;
     char   mesg[MESSAGE_SIZE];
 
     // Display startup message
@@ -33,26 +34,25 @@ void main(int argc, char *argv[])
     printf("Members: James Mack\n");
 
     // Create local socket
-    sock_fd = setup_socket(INADDR_ANY, SERVER_PORT);
-
+    sockfd = setup_socket(INADDR_ANY, SERVER_PORT);
 
     // Main loop
     while(1) {
         clilen = sizeof(struct sockaddr);
 
-        n = recvfrom(sock_fd, mesg, MESSAGE_SIZE, 0, &pcli_addr, &clilen);
+        n = recvfrom(sockfd, mesg, MESSAGE_SIZE, 0, &pcli_addr, &clilen);
 
         if(n < 0) {
             printf("recvfrom error\n");
             exit(3);
         }
         else {
-            printf("request received\n");
+            printf("request received: WRQ filename: fubar.txt\n", n);
             process_message(mesg, n);
 
         }
 
-        if(sendto(sock_fd, mesg, n, 0, &pcli_addr, clilen) != n) {
+        if(sendto(sockfd, mesg, n, 0, &pcli_addr, clilen) != n) {
             printf("sendto error\n");
             exit(4);
         }
