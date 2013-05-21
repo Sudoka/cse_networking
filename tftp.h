@@ -123,6 +123,9 @@ int file_read_next(File_Container * this_file);
 int file_write_next(File_Container * this_file, int length);
 int file_get_size(File_Container * this_file);
 
+// Socket
+int setup_socket(char * address, int port);
+
 // Utility
 void write_debug(char * message);
 void print_packet(Packet * packet);

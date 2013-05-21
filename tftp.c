@@ -7,6 +7,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+
 #include "tftp.h"
 
 //================================================================================
@@ -368,6 +375,39 @@ void print_packet(Packet * packet)
             break;
 
     }
+}
+
+//================================================================================
+//
+//  setup_socket
+//
+//================================================================================
+int setup_socket(char * address, int port)
+{
+    int sockfd, bind_result;
+    struct sockaddr_in addr;
+
+    // Create local socket
+    sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+
+    if(sockfd < 0) {
+        printf("can't open datagram socket\n");
+        exit(1);
+    }
+
+    bzero((char *) &addr, sizeof(addr));
+    addr.sin_family      = AF_INET;
+    addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    addr.sin_port        = htons(0);
+    bind_result = bind(sockfd, (struct sockaddr *) &addr, sizeof(addr));
+
+    if(bind_result < 0) {
+        printf("can't bind local address\n");
+        exit(2);
+    }
+
+
+
 }
 
 //================================================================================
