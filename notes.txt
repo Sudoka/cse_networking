@@ -1,7 +1,9 @@
 TODO
 --------------------------------------------------------------------------------
-- Pull socket code out into library
-
+- Add size field to Packet structs
+    - Have size field updated when the struct is populated/changed
+    - Change sendto sizes to be this size so every packet is not 516 bytes
+- Change 'r' and 'w' to opcode
 Notes
 --------------------------------------------------------------------------------
 - Network Order = Big Endian
@@ -15,10 +17,10 @@ close()
 socket()
 bind()
 
-bzero()
+bzero() - deprecated, use memset(void * where_to_set, int what_to_set, int how_many)
 fputs()
 
-bcopy()
+bcopy() - deprecated, use memcpy(* destination, * source, int size)
 
 htonl() / ntohl() - long integers
 htons() / ntohs() - short integers
