@@ -395,7 +395,12 @@ int setup_socket(char * address, int port)
 
     bzero((char *) &addr, sizeof(addr));
     addr.sin_family      = AF_INET;
-    addr.sin_addr.s_addr = inet_addr(INADDR_ANY);
+    if(address == 0) {
+        addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    }
+    else {
+        addr.sin_addr.s_addr = inet_addr(address);
+    }
     addr.sin_port        = htons(port);
 
     if(bind(sockfd, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
