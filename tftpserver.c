@@ -14,7 +14,6 @@
 #include "tftp.h"
 
 // Function prototypes
-void dg_echo(int sockfd);
 void process_message(char * message, int n);
 
 //================================================================================
