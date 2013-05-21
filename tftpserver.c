@@ -13,15 +13,6 @@
 
 #include "tftp.h"
 
-#define SERV_UDP_PORT   12345
-#define SERV_HOST_ADDR  "127.0.0.1"
-
-#define DEBUG 0
-
-char *progname;
-
-#define MAXMESG 2048            // Size of maximum message to received.
-
 // Function prototypes
 void dg_echo(int sockfd);
 void process_message(char * message, int n);
@@ -40,24 +31,23 @@ void main(int argc, char *argv[])
 {
     int sockfd;
     struct sockaddr_in serv_addr;
-    progname = argv[0];
     printf("Group #06 Server\n");
     printf("Members: James Mack\n");
 
     // Create local socket
-    //sockfd = setup_socket(INADDR_ANY, SERV_UDP_PORT);
+    //sockfd = setup_socket(INADDR_ANY, SERVER_PORT);
     if((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-        printf("%s: can't open datagram socket\n", progname);
+        printf("can't open datagram socket\n");
         exit(1); 
     }
 
     bzero((char *) &serv_addr, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-    serv_addr.sin_port = htons(SERV_UDP_PORT);
+    serv_addr.sin_port = htons(SERVER_PORT);
 
     if(bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) { 
-        printf("%s: can't bind local address\n",progname);
+        printf("can't bind local address\n");
         exit(2);
     }
 
@@ -74,16 +64,15 @@ void dg_echo(int sockfd)
     struct sockaddr pcli_addr;
     
     int    n, clilen, i;
-    char   mesg[MAXMESG];
+    char   mesg[MESSAGE_SIZE];
 
-    for( ; ; ) {
-
+    while(1) {
         clilen = sizeof(struct sockaddr);
 
-        n = recvfrom(sockfd, mesg, MAXMESG, 0, &pcli_addr, &clilen);
+        n = recvfrom(sockfd, mesg, MESSAGE_SIZE, 0, &pcli_addr, &clilen);
 
         if(n < 0) {
-            printf("%s: recvfrom error\n",progname);
+            printf("recvfrom error\n");
             exit(3);
         }
         else {
@@ -93,7 +82,7 @@ void dg_echo(int sockfd)
         }
 
         if(sendto(sockfd, mesg, n, 0, &pcli_addr, clilen) != n) {
-            printf("%s: sendto error\n",progname);
+            printf("sendto error\n");
             exit(4);
         }
 
