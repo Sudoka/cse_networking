@@ -110,6 +110,7 @@ void ERROR_Packet_construct_msg(ERROR_Packet * thisP, unsigned short opcode, cha
 void ERROR_Packet_construct(ERROR_Packet * thisP, unsigned short opcode, unsigned short e_code, char * error_msg);
 
 // Message Parsing
+Packet * create_packet_from_message(char * message);
 unsigned short read_message_opcode(char * message);
 unsigned short read_message_block_num(char * message);
 unsigned short read_message_error_code(char * message);

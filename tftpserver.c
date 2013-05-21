@@ -16,11 +16,6 @@
 // Function prototypes
 void dg_echo(int sockfd);
 void process_message(char * message, int n);
-void write_debug(char * message);
-unsigned short read_message_opcode(char * message);
-Packet * create_packet_from_message(char * message);
-void process_message(char * message, int n);
-void server_init();
 
 //================================================================================
 //
