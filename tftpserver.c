@@ -40,22 +40,20 @@ void main(int argc, char *argv[])
 {
     int sockfd;
     struct sockaddr_in serv_addr;
-
-    server_init();
-
     progname = argv[0];
+    printf("Group #06 Server\n");
+    printf("Members: James Mack\n");
 
+    // Create local socket
+    //sockfd = setup_socket(INADDR_ANY, SERV_UDP_PORT);
     if((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
         printf("%s: can't open datagram socket\n", progname);
         exit(1); 
     }
 
     bzero((char *) &serv_addr, sizeof(serv_addr));
-    
     serv_addr.sin_family = AF_INET;
-    
     serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-
     serv_addr.sin_port = htons(SERV_UDP_PORT);
 
     if(bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) { 
@@ -64,7 +62,6 @@ void main(int argc, char *argv[])
     }
 
     dg_echo(sockfd);
-
 }
 
 //================================================================================
@@ -118,13 +115,3 @@ void process_message(char * message, int n)
     //printf("\topcode: %u\n", opcode);
 
 }
-
-
-void server_init()
-{
-    printf("Group #06 Server\n");
-    printf("Members: James Mack\n");
-    printf("tftp server running, waiting for requests...\n");
-
-}
-
