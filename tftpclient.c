@@ -16,46 +16,24 @@
 #include "tftp.h"
 char test_packet[] = {0x00, 0x04, 0x00, 0x01};
 
+char op;
+char * filename = NULL;
+
+
+
+
 void dg_cli(int sockfd, struct sockaddr * pserv_addr, int servlen, char op, char * filename);
+void process_cl_args(int argc, char *argv[]);
 
-
+//================================================================================
+//
+//  main
+//
+//================================================================================
 void main(int argc, char *argv[])
 {
-    int sockfd, index, opt;
+    int sockfd;
     struct sockaddr_in serv_addr, cli_addr;
-    char op;
-    char * filename = NULL;
-
-    opterr = 0;
-
-    // Process command line arguments
-    while ((opt = getopt (argc, argv, "r:w:")) != -1) {
-        switch(opt) {
-            case 'r':
-                op = 'r';
-                filename = optarg;
-                break;
-            case 'w':
-                op = 'w';
-                filename = optarg;
-                break;
-            case '?':
-                if(optopt == 'r') {
-                    fprintf(stderr, "Option -%c requires an argument.\n", optopt);
-                }
-                else if(optopt == 'w') {
-                    fprintf(stderr, "Option -%c requires an argument.\n", optopt);
-                }
-                else if(isprint(optopt)) {
-                    fprintf (stderr, "Unknown option `-%c'.\n", optopt);
-                }
-                else {
-                    fprintf (stderr, "Unknown option character `\\x%x'.\n", optopt);
-                }
-                exit(0);
-                break;
-        }
-    }
 
     // Display init message
     printf("Group #06 Client\n");
@@ -115,5 +93,44 @@ void dg_cli(int sockfd, struct sockaddr * pserv_addr, int servlen, char op, char
     //}
 }
 
+//================================================================================
+//
+//  process_cl_args
+//
+//================================================================================
+void process_cl_args(int argc, char *argv[])
+{
+    int opt;
+    opterr = 0;
+
+    // Process command line arguments
+    while ((opt = getopt (argc, argv, "r:w:")) != -1) {
+        switch(opt) {
+            case 'r':
+                op = 'r';
+                filename = optarg;
+                break;
+            case 'w':
+                op = 'w';
+                filename = optarg;
+                break;
+            case '?':
+                if(optopt == 'r') {
+                    fprintf(stderr, "Option -%c requires an argument.\n", optopt);
+                }
+                else if(optopt == 'w') {
+                    fprintf(stderr, "Option -%c requires an argument.\n", optopt);
+                }
+                else if(isprint(optopt)) {
+                    fprintf (stderr, "Unknown option `-%c'.\n", optopt);
+                }
+                else {
+                    fprintf (stderr, "Unknown option character `\\x%x'.\n", optopt);
+                }
+                exit(0);
+                break;
+        }
+    }
+}
 
 
