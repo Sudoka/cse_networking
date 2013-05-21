@@ -28,7 +28,7 @@ void process_cl_args(int argc, char *argv[]);
 //================================================================================
 void main(int argc, char *argv[])
 {
-    int sockfd, n, i;
+    int sock_fd, n, i;
     struct sockaddr_in serv_addr, cli_addr;
     char sendline[MESSAGE_SIZE], recvline[MESSAGE_SIZE + 1];
 
@@ -37,7 +37,7 @@ void main(int argc, char *argv[])
     printf("Members: James Mack\n");
 
     // Create local socket
-    sockfd = setup_socket(INADDR_ANY, 0);
+    sock_fd = setup_socket(INADDR_ANY, 0);
 
     // Outgoing
     bzero((char *) &serv_addr, sizeof(serv_addr));
@@ -47,9 +47,9 @@ void main(int argc, char *argv[])
 
     printf("sending message\n");
 
-    sendto(sockfd, test_packet, MESSAGE_SIZE, 0, (struct sockaddr *) &serv_addr, sizeof(serv_addr));
+    sendto(sock_fd, test_packet, MESSAGE_SIZE, 0, (struct sockaddr *) &serv_addr, sizeof(serv_addr));
 
-    n = recvfrom(sockfd, recvline, MESSAGE_SIZE, 0, NULL, NULL);
+    n = recvfrom(sock_fd, recvline, MESSAGE_SIZE, 0, NULL, NULL);
 
     if(n < 0) {
         printf("recvfrom error\n");
@@ -58,7 +58,7 @@ void main(int argc, char *argv[])
     
     recvline[n] = 0;
 
-    close(sockfd);
+    close(sock_fd);
     exit(0);
 }
 

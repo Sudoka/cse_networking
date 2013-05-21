@@ -384,11 +384,11 @@ void print_packet(Packet * packet)
 //================================================================================
 int setup_socket(char * address, int port)
 {
-    int sockfd, bind_result;
+    int sock_fd, bind_result;
     struct sockaddr_in addr;
 
     // Create local socket
-    if((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+    if((sock_fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
         printf("can't open datagram socket\n");
         exit(1);
     }
@@ -403,12 +403,12 @@ int setup_socket(char * address, int port)
     }
     addr.sin_port        = htons(port);
 
-    if(bind(sockfd, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
+    if(bind(sock_fd, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
         printf("can't bind local address\n");
         exit(2);
     }
 
-    return sockfd;
+    return sock_fd;
 }
 
 //================================================================================

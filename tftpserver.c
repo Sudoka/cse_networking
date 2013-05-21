@@ -25,7 +25,7 @@ void main(int argc, char *argv[])
 {
     struct sockaddr_in serv_addr;
     struct sockaddr pcli_addr;
-    int    sockfd, n, clilen, i;
+    int    sock_fd, n, clilen, i;
     char   mesg[MESSAGE_SIZE];
 
     // Display startup message
@@ -33,14 +33,14 @@ void main(int argc, char *argv[])
     printf("Members: James Mack\n");
 
     // Create local socket
-    sockfd = setup_socket(INADDR_ANY, SERVER_PORT);
+    sock_fd = setup_socket(INADDR_ANY, SERVER_PORT);
 
 
     // Main loop
     while(1) {
         clilen = sizeof(struct sockaddr);
 
-        n = recvfrom(sockfd, mesg, MESSAGE_SIZE, 0, &pcli_addr, &clilen);
+        n = recvfrom(sock_fd, mesg, MESSAGE_SIZE, 0, &pcli_addr, &clilen);
 
         if(n < 0) {
             printf("recvfrom error\n");
@@ -52,7 +52,7 @@ void main(int argc, char *argv[])
 
         }
 
-        if(sendto(sockfd, mesg, n, 0, &pcli_addr, clilen) != n) {
+        if(sendto(sock_fd, mesg, n, 0, &pcli_addr, clilen) != n) {
             printf("sendto error\n");
             exit(4);
         }
