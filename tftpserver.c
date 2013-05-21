@@ -24,43 +24,20 @@ void process_message(char * message, int n);
 //================================================================================
 void main(int argc, char *argv[])
 {
-    int sockfd;
     struct sockaddr_in serv_addr;
+    struct sockaddr pcli_addr;
+    int    sockfd, n, clilen, i;
+    char   mesg[MESSAGE_SIZE];
+
+    // Display startup message
     printf("Group #06 Server\n");
     printf("Members: James Mack\n");
 
     // Create local socket
-    //sockfd = setup_socket(INADDR_ANY, SERVER_PORT);
-    if((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-        printf("can't open datagram socket\n");
-        exit(1); 
-    }
+    sockfd = setup_socket(INADDR_ANY, SERVER_PORT);
 
-    bzero((char *) &serv_addr, sizeof(serv_addr));
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-    serv_addr.sin_port = htons(SERVER_PORT);
 
-    if(bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) { 
-        printf("can't bind local address\n");
-        exit(2);
-    }
-
-    dg_echo(sockfd);
-}
-
-//================================================================================
-//
-//  dg_echo 
-//
-//================================================================================
-void dg_echo(int sockfd)
-{
-    struct sockaddr pcli_addr;
-    
-    int    n, clilen, i;
-    char   mesg[MESSAGE_SIZE];
-
+    // Main loop
     while(1) {
         clilen = sizeof(struct sockaddr);
 
@@ -71,7 +48,7 @@ void dg_echo(int sockfd)
             exit(3);
         }
         else {
-            printf("request received: WRQ filename: fubar.txt\n", n);
+            printf("request received\n");
             process_message(mesg, n);
 
         }
@@ -80,8 +57,6 @@ void dg_echo(int sockfd)
             printf("sendto error\n");
             exit(4);
         }
-
-        printf("request completed\n\n");
     }
 }
 
