@@ -23,10 +23,12 @@
 #define MODE "octet"
 
 #define STATE_READY         700
-#define STATE_ACK_SENT      701
+#define STATE_REQUEST_SENT  701
 #define STATE_WAITING_ACK   702
-#define STATE_WAITING_AC    701
-#define STATE_WAITING_A     701
+#define STATE_WAITING_DATA  703
+#define STATE_WAITING_A     704
+
+#define DEBUG 1
 
 //================================================================================
 // Packet
@@ -107,7 +109,7 @@ typedef struct {
 //================================================================================
 
 // Packet
-void Packet_init(Packet * thisP, unsigned short opcode);
+Packet * Packet_init(unsigned short opcode);
 void RWRQ_Packet_construct_msg(Packet * thisP, unsigned short opcode, char * message);
 void RWRQ_Packet_construct(Packet * thisP, unsigned short opcode, char * fname, char * mode);
 void DATA_Packet_construct_msg(Packet * thisP, unsigned short opcode, char * message);
@@ -128,7 +130,7 @@ char * read_message_data(char * message);
 char * read_message_error_msg(char * message);
 
 // FILE
-File_Container * file_open(char * filename, int opcode);
+File_Container * file_open(char * filename, char op);
 int file_read_next(File_Container * this_file);
 int file_write_next(File_Container * this_file, int length);
 int file_get_size(File_Container * this_file);

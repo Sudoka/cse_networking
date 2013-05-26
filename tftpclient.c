@@ -16,8 +16,9 @@
 #include "tftp.h"
 char test_packet[] = {0x00, 0x04, 0x00, 0x01};
 
-char op;
 char * filename = NULL;
+int current_state;
+int current_block;
 
 int process_cl_args(int argc, char *argv[]);
 
@@ -28,13 +29,15 @@ int process_cl_args(int argc, char *argv[]);
 //================================================================================
 void main(int argc, char *argv[])
 {
-    int sock_fd, bytes_received, opcode, op_complete;
+    unsigned short client_op;
+    int sock_fd, num_bytes, op_complete;
+    char file_op;
     struct sockaddr_in serv_addr, cli_addr;
     char send_message[MESSAGE_SIZE], receive_message[MESSAGE_SIZE];
-    Packet * packet;
+    Packet * packet = NULL;
     File_Container * transfer_file;
     
-    opcode = process_cl_args(argc, argv);
+    client_op = process_cl_args(argc, argv);
 
     // Display init message
     printf("Group #06 Client\n");
@@ -50,33 +53,102 @@ void main(int argc, char *argv[])
     serv_addr.sin_port        = htons(SERVER_PORT);
     
     // Setup transfer file
-    transfer_file = file_open(filename, opcode);
+    
+    if(client_op == OP_RRQ) {
+        file_op = 'w';
+    }
+    else if(client_op == OP_WRQ) {
+        file_op = 'r';
+    }
+    transfer_file = file_open(filename, file_op);
 
     // Setup request message
-    Packet_init(packet, opcode);
-    RWRQ_Packet_construct(packet, opcode, filename, MODE);
+    packet = Packet_init(client_op);
+    RWRQ_Packet_construct(packet, client_op, filename, MODE);
+    Packet_set_message(packet);
 
     // Send request message to server
-    sendto(sock_fd, packet->message, MESSAGE_SIZE, 0, (struct sockaddr *) &serv_addr, sizeof(serv_addr));
+    //sendto(sock_fd, packet->message, MESSAGE_SIZE, 0, (struct sockaddr *) &serv_addr, sizeof(serv_addr));
+    send_packet(packet, sock_fd, (struct sockaddr *) &serv_addr);
     op_complete = 0;
+    current_block = 0;
+
+    // Set state STATE_REQUEST_SENT
+    current_state = STATE_REQUEST_SENT;
+
+    free(packet);
+    packet = NULL;
 
     // Receive response from server
     while(!op_complete) {
-        bytes_received = recvfrom(sock_fd, receive_message, MESSAGE_SIZE, 0, NULL, NULL);
+        num_bytes = recvfrom(sock_fd, receive_message, MESSAGE_SIZE, 0, NULL, NULL);
 
-        if(bytes_received < 0) {
+        if(num_bytes < 0) {
             printf("recvfrom error\n");
             exit(4);
         }
 
         // Process response
-        //create_
-            // update File_Container current_data
-            memset(transfer_file->current_data, 0, bytes_received);
-            //memcpy();
+        packet = create_packet_from_message(receive_message);
+        printf("packet received: ");
+        Packet_display_string(packet);
+        printf("\n");
+
+        switch(packet->opcode) {
+            case 1: // RRQ
+                // INVALID STATE - client does not receive read requests
+                break;
+
+            case 2: // WRQ
+                // INVALID STATE - client does not receive write requests 
+                break;
+
+            case 3: // DATA
+                // Request sent for read 
+                if(current_state == STATE_REQUEST_SENT) {
+                    current_block = ((DATA_Packet *) packet)->block_num;
+                    memcpy(transfer_file->current_data, ((DATA_Packet *)packet)->data, DATA_SIZE);
+
+                    num_bytes = file_write_next(transfer_file, DATA_SIZE);
+
+                }
+                // ACK sent for previous block
+
+                // Send ACK for this packet
+                free(packet);
+                packet = Packet_init(OP_ACK);
+                ACK_Packet_construct(packet, OP_ACK, current_block);
+                Packet_set_message(packet);
+                send_packet(packet, sock_fd, &serv_addr);
+                op_complete = 1;
+                break;
+
+            case 4: // ACK
+                // Request sent for write, block # should be 0
+
+                // DATA sent, ACK block # should equal last DATA block # sent
+                break;
+
+            case 5: // ERROR
+                break;
+
+            default:
+                break;
+
+        }
+
+        free(packet);
+        packet = NULL;
+
+        // update File_Container current_data
+        memset(transfer_file->current_data, 0, num_bytes);
+        //memcpy();
+
+
 
     }
 
+    file_close(transfer_file);
     close(sock_fd);
     exit(0);
 }
