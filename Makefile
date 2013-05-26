@@ -1,6 +1,6 @@
 RM := rm -f
 
-targets := server_test test_echo_client tftpserver tftpclient CLIENT/tftpclient SERVER/tftpserver
+targets := server_test test_echo_client tftpserver tftpclient CLIENT/tftpclient SERVER/tftpserver CLIENT/bar.txt SERVER/foo.txt
 
 all:
 	gcc -g -o tftpserver tftpserver.c tftp.c

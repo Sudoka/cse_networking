@@ -28,7 +28,7 @@
 #define STATE_WAITING_DATA  703
 #define STATE_WAITING_A     704
 
-#define DEBUG 1
+#define DEBUG 0
 
 //================================================================================
 // Packet

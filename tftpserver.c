@@ -19,8 +19,7 @@ void process_message(char * message, int n, int sock_fd, struct sockaddr * cli_a
 // Global Variables
 unsigned short current_block;
 int current_state;
-File_Container * read_file;
-File_Container * write_file;
+File_Container * transfer_file;
 
 //================================================================================
 //
@@ -37,6 +36,7 @@ void main(int argc, char *argv[])
     // Display startup message
     printf("Group #06 Server\n");
     printf("Members: James Mack\n");
+    printf("===================\n\n");
 
     // Create local socket
     sock_fd = setup_socket(INADDR_ANY, SERVER_PORT);
@@ -85,13 +85,13 @@ void process_message(char * message, int n, int sock_fd, struct sockaddr * cli_a
             }
 
             // Open file for reading
-            read_file = file_open(((RWRQ_Packet *)packet)->filename, 'r');
+            transfer_file = file_open(((RWRQ_Packet *)packet)->filename, 'r');
             current_block = 0;
 
             // Send first packet of DATA
-            num_bytes = file_read_next(read_file); 
+            num_bytes = file_read_next(transfer_file); 
             response_packet = Packet_init(OP_DATA);
-            DATA_Packet_construct(response_packet, OP_DATA, ++current_block, read_file->current_data);
+            DATA_Packet_construct(response_packet, OP_DATA, ++current_block, transfer_file->current_data);
             Packet_set_message(response_packet);
             send_packet(response_packet, sock_fd, cli_addr);
             current_state = STATE_WAITING_ACK;
@@ -99,28 +99,56 @@ void process_message(char * message, int n, int sock_fd, struct sockaddr * cli_a
             break;
         case 2:
         // Begin new file reception
+            //if(current_state == STATE_READY) {
+                transfer_file = file_open(((RWRQ_Packet *)packet)->filename, 'w');
+                current_block = 0;
+            //}
+
+            // Send ACK for this packet
+            response_packet = Packet_init(OP_ACK);
+            ACK_Packet_construct(response_packet, OP_ACK, current_block);
+            Packet_set_message(response_packet);
+            send_packet(response_packet, sock_fd, cli_addr);
+
             break;
         case 3:
         // Received next DATA, add to file and send ACK
+            if(current_state == STATE_READY) {
+                current_block = ((DATA_Packet *) packet)->block_num;
+                memcpy(transfer_file->current_data, ((DATA_Packet *)packet)->data, DATA_SIZE);
+
+                num_bytes = file_write_next(transfer_file, DATA_SIZE);
+
+            }
+            // ACK sent for previous block
+
+            // Send ACK for this packet
+            response_packet = Packet_init(OP_ACK);
+            ACK_Packet_construct(response_packet, OP_ACK, current_block);
+            Packet_set_message(response_packet);
+            send_packet(response_packet, sock_fd, cli_addr);
+
+            // If last packet, close file
+            file_close(transfer_file);
+
             break;
         case 4:
         // Received next ACK, send next DATA
             // Check that ACK was for the last block sent
-            if(DEBUG) printf("current block: %u\tpacket block: %u\n", current_block, ((ACK_Packet *) packet)->block_num);
             if(current_block != ((ACK_Packet *)packet)->block_num) {
                 // ACK not for last block sent
                 return;
             }
 
             // Check if file is done
-            if(file_bytes_remaining(read_file) <= 0) {
+            if(file_bytes_remaining(transfer_file) <= 0) {
                 printf("file complete\n");
                 return;
             }
             // Send next packet of DATA
-            num_bytes = file_read_next(read_file); 
+            num_bytes = file_read_next(transfer_file); 
             response_packet = Packet_init(OP_DATA);
-            DATA_Packet_construct(response_packet, OP_DATA, ++current_block, read_file->current_data);
+            DATA_Packet_construct(response_packet, OP_DATA, ++current_block, transfer_file->current_data);
             Packet_set_message(response_packet);
             send_packet(response_packet, sock_fd, cli_addr);
             current_state = STATE_WAITING_ACK;

@@ -42,6 +42,8 @@ void main(int argc, char *argv[])
     // Display init message
     printf("Group #06 Client\n");
     printf("Members: James Mack\n");
+    printf("===================\n\n");
+
 
     // Create local socket
     sock_fd = setup_socket(INADDR_ANY, 0);
@@ -124,7 +126,28 @@ void main(int argc, char *argv[])
                 break;
 
             case 4: // ACK
+                
+                // Check that ACK was for the last block sent
+                if((((ACK_Packet *)packet)->block_num == 0) && (current_block != ((ACK_Packet *)packet)->block_num)) {
+                    // ACK not for last block sent or request packet
+                    return;
+                }
+
                 // Request sent for write, block # should be 0
+                // Received next ACK, send next DATA
+
+                // Check if file is done
+                if(file_bytes_remaining(transfer_file) <= 0) {
+                    printf("file complete\n");
+                    return;
+                }
+                // Send next packet of DATA
+                num_bytes = file_read_next(transfer_file);
+                packet = Packet_init(OP_DATA);
+                DATA_Packet_construct(packet, OP_DATA, ++current_block, transfer_file->current_data);
+                Packet_set_message(packet);
+                send_packet(packet, sock_fd, &serv_addr);
+                current_state = STATE_WAITING_ACK;
 
                 // DATA sent, ACK block # should equal last DATA block # sent
                 break;
