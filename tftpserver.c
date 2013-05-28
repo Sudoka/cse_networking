@@ -67,7 +67,7 @@ void main(int argc, char *argv[])
 //================================================================================
 void process_message(char * message, int bytes_received, int sock_fd, struct sockaddr * cli_addr)
 {
-    int num_bytes;
+    int num_bytes, data_size;
     Packet * packet = create_packet_from_message(message, bytes_received);
     Packet * response_packet;
 
@@ -117,30 +117,32 @@ void process_message(char * message, int bytes_received, int sock_fd, struct soc
 
             break;
         case 3:
-        // Received next DATA, add to file and send ACK
-            if(current_state == STATE_READY) {
-                current_block = ((DATA_Packet *) packet)->block_num;
-                memcpy(transfer_file->current_data, ((DATA_Packet *)packet)->data, DATA_SIZE);
 
-                num_bytes = file_write_next(transfer_file, DATA_SIZE);
+            data_size = bytes_received - DATA_OFFSET;
 
-            }
-            // ACK sent for previous block
+            current_block = ((DATA_Packet *) packet)->block_num;
+            memcpy(transfer_file->current_data, ((DATA_Packet *)packet)->data, data_size);
+
+            num_bytes = file_write_next(transfer_file, data_size);
 
             // Send ACK for this packet
+            //free(packet);
             response_packet = Packet_init(OP_ACK);
             ACK_Packet_construct(response_packet, OP_ACK, current_block);
             Packet_set_message(response_packet);
             send_packet(response_packet, sock_fd, cli_addr);
 
             // If last packet, close file
-            if(bytes_received < (DATA_SIZE - DATA_OFFSET)) {
+            if(data_size < DATA_SIZE) {
+                current_state = STATE_COMPLETE;
                 file_close(transfer_file);
+            }
+            else {
+                current_state = STATE_WAITING_ACK;
             }
 
             break;
         case 4:
-        // Received next ACK, send next DATA
             // Check that ACK was for the last block sent
             if(current_block != ((ACK_Packet *)packet)->block_num) {
                 // ACK not for last block sent
@@ -173,7 +175,6 @@ void process_message(char * message, int bytes_received, int sock_fd, struct soc
             Packet_set_message(response_packet);
             send_packet(response_packet, sock_fd, cli_addr);
             current_state = STATE_WAITING_ACK;
-
 
             break;
         case 5:

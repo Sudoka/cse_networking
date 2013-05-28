@@ -30,7 +30,7 @@ int process_cl_args(int argc, char *argv[]);
 void main(int argc, char *argv[])
 {
     unsigned short client_op;
-    int sock_fd, num_bytes, op_complete, data_size, bytes_received;
+    int sock_fd, num_bytes, op_complete, data_size, bytes_received, last_packet_sent;
     char file_op;
     struct sockaddr_in serv_addr, cli_addr;
     char send_message[MESSAGE_SIZE], receive_message[MESSAGE_SIZE];
@@ -77,6 +77,7 @@ void main(int argc, char *argv[])
 
     // Set state STATE_REQUEST_SENT
     current_state = STATE_REQUEST_SENT;
+    last_packet_sent = 0;
 
     free(packet);
     packet = NULL;
@@ -111,6 +112,7 @@ void main(int argc, char *argv[])
 
                 current_block = ((DATA_Packet *) packet)->block_num;
                 memcpy(transfer_file->current_data, ((DATA_Packet *)packet)->data, data_size);
+
                 num_bytes = file_write_next(transfer_file, data_size);
 
                 // Send ACK for this packet
@@ -120,19 +122,18 @@ void main(int argc, char *argv[])
                 Packet_set_message(packet);
                 send_packet(packet, sock_fd, &serv_addr);
 
-                current_state = STATE_WAITING_DATA;
                 if(data_size < DATA_SIZE) {
                     op_complete = 1;
                     current_state = STATE_COMPLETE;
+                    file_close(transfer_file);
                 }
                 else {
-                    current_state = STATE_WAITING_DATA; 
+                    current_state = STATE_WAITING_ACK; 
                 }
 
                 break;
 
             case 4: // ACK
-                
                 // Check that ACK was for the last block sent
                 if((((ACK_Packet *)packet)->block_num == 0) && (current_block != ((ACK_Packet *)packet)->block_num)) {
                     // ACK not for last block sent or request packet
@@ -140,31 +141,42 @@ void main(int argc, char *argv[])
                     break;
                 }
 
-                // Request sent for write, block # should be 0
-                // Received next ACK, send next DATA
-
+                if(last_packet_sent) {
+                    if(file_bytes_remaining(transfer_file) != 0) {
+                        printf("error: last_packet_sent flag set but bytes remain in file\n");
+                    }
+                    break;
+                }
+ 
                 // Check if file is done
                 if(file_bytes_remaining(transfer_file) <= 0) {
-                    printf("file complete\n");
-                    return;
+                    // send empty final packet
+                    num_bytes = 0;
+                    memset(transfer_file->current_data, 0, DATA_SIZE);
                 }
+                else {
+                    // Send next packet of DATA
+                    num_bytes = file_read_next(transfer_file);
+                }
+
+                if(num_bytes < DATA_SIZE) {
+                    last_packet_sent = 1;
+                    op_complete = 1;
+                }
+
                 // Send next packet of DATA
-                num_bytes = file_read_next(transfer_file);
                 packet = Packet_init(OP_DATA);
                 DATA_Packet_construct(packet, OP_DATA, ++current_block, transfer_file->current_data, num_bytes);
                 Packet_set_message(packet);
                 send_packet(packet, sock_fd, &serv_addr);
                 current_state = STATE_WAITING_ACK;
 
-                // DATA sent, ACK block # should equal last DATA block # sent
                 break;
-
             case 5: // ERROR
                 break;
 
             default:
                 break;
-
         }
 
         free(packet);
@@ -175,7 +187,10 @@ void main(int argc, char *argv[])
         //memcpy();
     }
 
-    file_close(transfer_file);
+    if(last_packet_sent) {
+        printf("file complete\n");
+    }
+
     close(sock_fd);
     exit(0);
 }

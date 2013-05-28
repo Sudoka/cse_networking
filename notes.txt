@@ -8,6 +8,8 @@ TODO
 - Add changes to RWRQ_Packet_construct to other construct methods
 - Consider combining all construct methods
 - Get rid of #define sizes in all read_message functions
+- Move process_message to tftp.c and have both programs use it
+
 Notes
 --------------------------------------------------------------------------------
 - Network Order = Big Endian
