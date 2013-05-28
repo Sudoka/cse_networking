@@ -27,7 +27,7 @@
 //================================================================================
 Packet * Packet_init(unsigned short opcode)
 {
-    //if(DEBUG) printf("[DEBUG] Packet_init(%u)\n", opcode);
+    if(DEBUG) printf("\t[DEBUG] Packet_init(%2u)\n", opcode);
     Packet * packet = NULL;
 
     switch(opcode) {
@@ -62,14 +62,21 @@ Packet * Packet_init(unsigned short opcode)
 //================================================================================
 void Packet_set_message(Packet * packet)
 {
-    //printf("opcode before conversion: %u\n", packet->opcode);
+    int offset;
     *(unsigned short *)&(packet->message) = htons(packet->opcode);
-    //printf("opcode after conversion: %u\n", htons(packet->opcode));
-
+    if(DEBUG) printf("\t[DEBUG] Packet_set_message(%2u)\n", packet->opcode);
+    
     switch(packet->opcode) {
         case 1:
         case 2:
-            memcpy(&packet->message[2], ((RWRQ_Packet *)packet)->filename, sizeof(((RWRQ_Packet *)packet)->filename));
+            memcpy(&packet->message[2], ((RWRQ_Packet *)packet)->filename, sizeof(((RWRQ_Packet *)packet)->filename) + 1);
+            offset = sizeof(packet->opcode) + strlen(((RWRQ_Packet *) packet)->filename) + 1;
+            if(DEBUG) {
+                printf("\t\toffset: %d\n", offset);
+                printf("\t\tsizeof(packet->opcode): %d\n", sizeof(packet->opcode));
+                printf("\t\tstrlen(packet->filename: %d\n", strlen(((RWRQ_Packet *) packet)->filename));
+            }
+            memcpy(&packet->message[offset], ((RWRQ_Packet *)packet)->mode, sizeof(((RWRQ_Packet *)packet)->mode) + 1);
             break;
         case 3:
             *(unsigned short *)&(packet->message[2]) = htons(((DATA_Packet *)packet)->block_num);
@@ -94,19 +101,19 @@ void Packet_display_string(Packet * packet)
 {
     switch(packet->opcode) {
         case 1:
-            printf("RRQ - filename: %s", ((RWRQ_Packet *)packet)->filename);
+            printf("RRQ\tfilename: %s\tsize: %d", ((RWRQ_Packet *)packet)->filename, packet->size);
             break;
         case 2:
-            printf("WRQ - filename: %s", ((RWRQ_Packet *)packet)->filename);
+            printf("WRQ\tfilename: %s\tsize: %d", ((RWRQ_Packet *)packet)->filename, packet->size);
             break;
         case 3:
-            printf("DATA - block #: %d", ((DATA_Packet *)packet)->block_num);
+            printf("DATA\tblock #: %d\t\tsize: %d", ((DATA_Packet *)packet)->block_num, packet->size);
             break;
         case 4:
-            printf("ACK - block #: %d", ((ACK_Packet *)packet)->block_num);
+            printf("ACK\tblock #: %d\t\tsize: %d", ((ACK_Packet *)packet)->block_num, packet->size);
             break;
         case 5:
-            printf("ERROR - error_code: %d - error_message: %s", ((ERROR_Packet *)packet)->error_code, ((ERROR_Packet *)packet)->error_message);
+            printf("ERROR\terror_code: %d\terror_message: %s\t\tsize: %d", ((ERROR_Packet *)packet)->error_code, ((ERROR_Packet *)packet)->error_message, packet->size);
             break;
         default:
             break;
@@ -122,19 +129,38 @@ void Packet_display_string(Packet * packet)
 //================================================================================
 void RWRQ_Packet_construct_msg(Packet * packet, unsigned short opcode, char * message)
 {
-    //printf("Creating RWRQ_Packet\n\topcode: %u\n\tfilename: %s\n", opcode, read_message_filename(message));
+    char * filename;
+    char * mode;
+
+    filename = read_message_filename(message);
+    mode = read_message_mode(message, strlen(filename));
+
     packet->opcode = opcode;        
-    strcpy(((RWRQ_Packet *) packet)->filename, read_message_filename(message));
-    strcpy(((RWRQ_Packet *) packet)->mode, read_message_mode(message));
+    strcpy(((RWRQ_Packet *) packet)->filename, filename);
+    strcpy(((RWRQ_Packet *) packet)->mode, mode);
     strcpy(packet->message, message);
+    packet->size = sizeof(packet->opcode) + strlen(((RWRQ_Packet *) packet)->filename) + strlen(((RWRQ_Packet *) packet)->mode) + 1 + 1;
+    if(DEBUG) {
+        printf("\t[DEBUG] Creating RWRQ_Packet\tsize: %d\n", packet->size);
+        printf("\t\topcode: %2u\tsize: %d\n", opcode, sizeof(opcode));
+        printf("\t\tfilename: %s\tsize: %d\n", filename, strlen(filename));
+        printf("\t\tmode: %s\tsize: %d\n", mode, strlen(mode));
+    }
 }
 
-void RWRQ_Packet_construct(Packet * packet, unsigned short opcode, char * fname, char * mode)
+void RWRQ_Packet_construct(Packet * packet, unsigned short opcode, char * filename, char * mode)
 {
-    //printf("Creating RWRQ_Packet\n\topcode: %u\n\tfilename: %s\n", opcode, fname);
     packet->opcode = opcode;        
-    strcpy(((RWRQ_Packet *) packet)->filename, fname);
+    strcpy(((RWRQ_Packet *) packet)->filename, filename);
     strcpy(((RWRQ_Packet *) packet)->mode, mode);
+    packet->size = sizeof(opcode) + strlen(filename) + strlen(mode) + 1 + 1;
+
+    if(DEBUG) {
+        printf("\t[DEBUG] Creating RWRQ_Packet\tsize: %d\n", packet->size);
+        printf("\t\topcode: %2u\tsize: %d\n", opcode, sizeof(opcode));
+        printf("\t\tfilename: %s\tsize: %d\n", filename, strlen(filename));
+        printf("\t\tmode: %s\tsize: %d\n", mode, strlen(mode));
+    }
 }
 
 //================================================================================
@@ -143,19 +169,22 @@ void RWRQ_Packet_construct(Packet * packet, unsigned short opcode, char * fname,
 //
 //================================================================================
 
-void DATA_Packet_construct_msg(Packet * packet, unsigned short opcode, char * message)
+void DATA_Packet_construct_msg(Packet * packet, unsigned short opcode, char * message, int data_size)
 {
     packet->opcode = opcode;        
     ((DATA_Packet *) packet)->block_num = read_message_block_num(message);        
-    memcpy(((DATA_Packet *) packet)->data, read_message_data(message), DATA_SIZE);
+    memcpy(((DATA_Packet *) packet)->data, read_message_data(message, data_size), data_size);
 
+    packet->size = 2 + 2 + data_size;
 }
 
-void DATA_Packet_construct(Packet * packet, unsigned short opcode, unsigned short b_num, char * data)
+void DATA_Packet_construct(Packet * packet, unsigned short opcode, unsigned short b_num, char * data, int size)
 {
     packet->opcode = opcode;        
     ((DATA_Packet *) packet)->block_num = b_num;
-    memcpy(((DATA_Packet *) packet)->data, data, DATA_SIZE);
+    memcpy(((DATA_Packet *) packet)->data, data, size);
+
+    packet->size = 2 + 2 + size;
 }
 
 //================================================================================
@@ -168,12 +197,14 @@ void ACK_Packet_construct_msg(Packet * packet, unsigned short opcode, char * mes
     packet->opcode = opcode;        
     ((ACK_Packet *) packet)->block_num = read_message_block_num(message);        
 
+    packet->size = 2 + 2;
 }
 
 void ACK_Packet_construct(Packet * packet, unsigned short opcode, unsigned short b_num)
 {
     packet->opcode = opcode;        
     ((ACK_Packet *) packet)->block_num = b_num;
+    packet->size = 2 + 2;
 }
 
 //================================================================================
@@ -187,6 +218,9 @@ void ERROR_Packet_construct_msg(Packet * packet, unsigned short opcode, char * m
     ((ERROR_Packet *)packet)->error_code = read_message_error_code(message);        
     strcpy(((ERROR_Packet *)packet)->error_message, read_message_error_msg(message));
 
+    packet->size = 2 + 2 + strlen(((ERROR_Packet *) packet)->error_message) + 1;
+    
+
 }
 
 void ERROR_Packet_construct(Packet * packet, unsigned short opcode, unsigned short e_code, char * error_msg)
@@ -194,6 +228,8 @@ void ERROR_Packet_construct(Packet * packet, unsigned short opcode, unsigned sho
     packet->opcode = opcode;        
     ((ERROR_Packet *)packet)->error_code = e_code;        
     strcpy(((ERROR_Packet *)packet)->error_message, error_msg);
+
+    packet->size = 2 + 2 + strlen(error_msg) + 1;
 }
 
 
@@ -205,7 +241,7 @@ void ERROR_Packet_construct(Packet * packet, unsigned short opcode, unsigned sho
 //  create_packet_from_message
 //
 //================================================================================
-Packet * create_packet_from_message(char * message)
+Packet * create_packet_from_message(char * message, int size)
 {
     unsigned short opcode = read_message_opcode(message);
 
@@ -218,7 +254,7 @@ Packet * create_packet_from_message(char * message)
             break;
         case 3:
             packet = Packet_init(opcode);
-            DATA_Packet_construct_msg(packet, opcode, message);
+            DATA_Packet_construct_msg(packet, opcode, message, size - 4);
             break;
         case 4:
             packet = Packet_init(opcode);
@@ -251,7 +287,7 @@ unsigned short read_message_opcode(char * message)
     opcode = *((unsigned short *) &message[0]);
     opcode = ntohs(opcode);
 
-    if(DEBUG) printf("[DEBUG] read_message_opcode() - opcode: %u\n", opcode);
+    if(DEBUG) printf("\t[DEBUG] read_message_opcode()\topcode: %2u\n", opcode);
 
     return opcode;
 }
@@ -267,7 +303,7 @@ unsigned short read_message_block_num(char * message)
 
     block_num = *((unsigned short *) &message[2]);
     block_num = ntohs(block_num);
-    if(DEBUG) printf("[DEBUG] read_message_block_num() - block_num: %u\n", block_num);
+    if(DEBUG) printf("\t[DEBUG] read_message_block_num()\tblock_num: %2u\n", block_num);
 
     return block_num;
 }
@@ -279,7 +315,10 @@ unsigned short read_message_block_num(char * message)
 //================================================================================
 unsigned short read_message_error_code(char * message)
 {
-    return read_message_block_num(message);
+    unsigned short error_code;
+    error_code = read_message_block_num(message);
+    if(DEBUG) printf("\t[DEBUG] read_message_error_code()\terror_code: %2u\n", error_code);
+    return error_code;
 }
 
 //================================================================================
@@ -293,7 +332,7 @@ char * read_message_filename(char * message)
     
     strcpy(filename, message + 2);
 
-    //printf("filename: %s\n", filename);
+    if(DEBUG) printf("\t[DEBUG] read_message_filename\tfilename: %s\n", filename);
 
     return filename;
 
@@ -304,16 +343,17 @@ char * read_message_filename(char * message)
 //  read_message_mode
 //
 //================================================================================
-char * read_message_mode(char * message)
+char * read_message_mode(char * message, int filename_size)
 {
     char * mode = malloc(FILENAME_LENGTH + 1);
+    // TODO: Memory leak?
     
     int offset; 
-    offset = strlen(message + 2) + 2 + 1;
-    //printf("mode-offset: %d\n", offset);
+    offset = filename_size + 2 + 1;
     strcpy(mode, message + offset);
 
-    //printf("mode: %s\n", mode);
+    
+    if(DEBUG) printf("\t[DEBUG] read_message_mode\tmode: %s\n", mode);
 
     return mode;
 }
@@ -323,13 +363,23 @@ char * read_message_mode(char * message)
 //  read_message_data
 //
 //================================================================================
-char * read_message_data(char * message)
+char * read_message_data(char * message, int data_size)
 {
-    char * data = malloc(DATA_SIZE);
-    
-    memcpy(data, message + (MESSAGE_SIZE - DATA_SIZE), DATA_SIZE);
+    char * data = malloc(data_size + 1);
+    // TODO: Memory leak?
+    int offset = MESSAGE_SIZE - DATA_SIZE; 
+    if(!data_size) {
+        data[0] = 0;
+    }
+    else {
+        memcpy(data, message + (MESSAGE_SIZE - DATA_SIZE), data_size);
+    }
 
-    //printf("data: %s\n", data);
+    if(DEBUG) {
+        printf("\t[DEBUG] read_message_data\n");
+        printf("\t\toffset: %d\n", offset);
+        printf("\t\tdata: %s\n", data);
+    }
 
     return data;
 }
@@ -346,8 +396,8 @@ char * read_message_error_msg(char * message)
     int offset; 
     offset = strlen(message + 2) + 2 + 1;
     strcpy(error_msg, message + (MESSAGE_SIZE - DATA_SIZE));
-
-    //printf("error_msg: %s\n", error_msg);
+    // TODO change something here
+    if(DEBUG) printf("\t[DEBUG] read_message_error_msg\terror_msg: %s\n", error_msg);
 
     return error_msg;
 }
@@ -370,11 +420,12 @@ File_Container * file_open(char * filename, char op)
         exit(5);
     }
     */
-
+    if(DEBUG) printf("\t[DEBUG] opening file: %s\top: %c\n", filename, op);
     File_Container * new_file = malloc(sizeof(File_Container));
     memset(new_file, 0, sizeof(File_Container));
 
     new_file->fp = fopen(filename, &op);
+    memcpy(new_file->filename, filename, strlen(filename) + 1);
     new_file->count = 0; 
 
     if(new_file->fp == NULL) {
@@ -392,6 +443,7 @@ File_Container * file_open(char * filename, char op)
 //================================================================================
 void file_close(File_Container * this_file)
 {
+    if(DEBUG) printf("\t[DEBUG] closing file: %s\n", this_file->filename);
     fclose(this_file->fp);
 
     free(this_file);
@@ -404,10 +456,12 @@ void file_close(File_Container * this_file)
 //================================================================================
 int file_read_next(File_Container * this_file)
 {
+    int bytes;
     memset(this_file->current_data, 0, sizeof(this_file->current_data));
-
-    return fread(this_file->current_data, sizeof(char), DATA_SIZE, this_file->fp);
-
+    
+    bytes = fread(this_file->current_data, sizeof(char), DATA_SIZE, this_file->fp);
+    if(DEBUG) printf("\t[DEBUG]file_read_next()\tbytes read: %d\n", bytes);
+    return bytes;
 }
 
 //================================================================================
@@ -417,7 +471,12 @@ int file_read_next(File_Container * this_file)
 //================================================================================
 int file_write_next(File_Container * this_file, int length)
 {
-    return fwrite(this_file->current_data, sizeof(char), length, this_file->fp);
+    int bytes;
+    bytes = fwrite(this_file->current_data, sizeof(char), length, this_file->fp);
+    this_file->current_size = bytes;
+
+    if(DEBUG) printf("\t[DEBUG]file_write_next()\tbytes written: %d\n", bytes);
+    return bytes;
 }
 
 //================================================================================
@@ -450,7 +509,6 @@ int file_bytes_remaining(File_Container * this_file)
     current = ftell(this_file->fp);
     size = file_get_size(this_file);
 
-
     return size - current;
 }
 
@@ -466,29 +524,29 @@ void print_packet(Packet * packet)
         case 1:
         case 2:
             printf("RWRQ_Packet\n");
-            printf("\topcode:\t\t%u\n", ((RWRQ_Packet *) packet)->opcode);
+            printf("\topcode:\t\t%2u\n", ((RWRQ_Packet *) packet)->opcode);
             printf("\tmessage:\t%s\n", ((RWRQ_Packet *) packet)->message);
             printf("\tfilename:\t%s\n", ((RWRQ_Packet *) packet)->filename);
             printf("\tmode:\t\t%s\n", ((RWRQ_Packet *) packet)->mode);
             break;
         case 3:
             printf("DATA_Packet\n");
-            printf("\topcode:\t\t%u\n", ((DATA_Packet *) packet)->opcode);
+            printf("\topcode:\t\t%2u\n", ((DATA_Packet *) packet)->opcode);
             printf("\tmessage:\t%s\n", ((DATA_Packet *) packet)->message);
-            printf("\tblock_num:\t%u\n", ((DATA_Packet *) packet)->block_num);
+            printf("\tblock_num:\t%2u\n", ((DATA_Packet *) packet)->block_num);
             printf("\tdata:\t\t%s\n", ((DATA_Packet *) packet)->data);
             break;
         case 4:
             printf("ACK_Packet\n");
-            printf("\topcode:\t\t%u\n", ((ACK_Packet *) packet)->opcode);
+            printf("\topcode:\t\t%2u\n", ((ACK_Packet *) packet)->opcode);
             printf("\tmessage:\t%s\n", ((ACK_Packet *) packet)->message);
-            printf("\tblock_num:\t%u\n", ((ACK_Packet *) packet)->block_num);
+            printf("\tblock_num:\t%2u\n", ((ACK_Packet *) packet)->block_num);
             break;
         case 5:
             printf("ERROR_Packet\n");
-            printf("\topcode:\t\t%u\n", ((ERROR_Packet *) packet)->opcode);
+            printf("\topcode:\t\t%2u\n", ((ERROR_Packet *) packet)->opcode);
             printf("\tmessage:\t%s\n", ((ERROR_Packet *) packet)->message);
-            printf("\terror_code:\t%u\n", ((ERROR_Packet *) packet)->error_code);
+            printf("\terror_code:\t%2u\n", ((ERROR_Packet *) packet)->error_code);
             printf("\terror_message:\t%s\n", ((ERROR_Packet *) packet)->error_message);
             break;
         default:
@@ -539,41 +597,19 @@ int setup_socket(char * address, int port)
 int send_packet(Packet * packet, int sock_fd, struct sockaddr * serv_addr)
 {
     int bytes = 0;
-    printf("sending: ");
+    printf("sending:\t");
     Packet_display_string(packet);
     printf("\n");
 
 
-    bytes = sendto(sock_fd, packet->message, MESSAGE_SIZE, 0, serv_addr, sizeof(*serv_addr));
+    bytes = sendto(sock_fd, packet->message, packet->size, 0, serv_addr, sizeof(*serv_addr));
 
-    if(DEBUG) printf("bytes sent: %d\n", bytes);
+    if(DEBUG) printf("\t[DEBUG] send_packet()\tbytes sent: %d\n", bytes);
 
-    if(bytes != MESSAGE_SIZE) {
+    if(bytes != packet->size) {
         printf("sendto error: %s\n", strerror(errno));
         exit(4);
     }
 
     return bytes;
-
-
 }
-
-/*
-    switch(opcode) {
-        case 1:
-        case 2:
-            break;
-        case 3:
-            break;
-        case 4:
-            break;
-        case 5:
-            break;
-        default:
-            break;
-
-
-    }
-
-
-*/

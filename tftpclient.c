@@ -30,7 +30,7 @@ int process_cl_args(int argc, char *argv[]);
 void main(int argc, char *argv[])
 {
     unsigned short client_op;
-    int sock_fd, num_bytes, op_complete;
+    int sock_fd, num_bytes, op_complete, data_size, bytes_received;
     char file_op;
     struct sockaddr_in serv_addr, cli_addr;
     char send_message[MESSAGE_SIZE], receive_message[MESSAGE_SIZE];
@@ -57,7 +57,7 @@ void main(int argc, char *argv[])
     // Setup transfer file
     
     if(client_op == OP_RRQ) {
-        file_op = 'w';
+        file_op = 'a';
     }
     else if(client_op == OP_WRQ) {
         file_op = 'r';
@@ -83,16 +83,16 @@ void main(int argc, char *argv[])
 
     // Receive response from server
     while(!op_complete) {
-        num_bytes = recvfrom(sock_fd, receive_message, MESSAGE_SIZE, 0, NULL, NULL);
+        bytes_received = recvfrom(sock_fd, receive_message, MESSAGE_SIZE, 0, NULL, NULL);
 
-        if(num_bytes < 0) {
+        if(bytes_received < 0) {
             printf("recvfrom error\n");
             exit(4);
         }
 
         // Process response
-        packet = create_packet_from_message(receive_message);
-        printf("packet received: ");
+        packet = create_packet_from_message(receive_message, bytes_received);
+        printf("received:\t");
         Packet_display_string(packet);
         printf("\n");
 
@@ -106,15 +106,12 @@ void main(int argc, char *argv[])
                 break;
 
             case 3: // DATA
-                // Request sent for read 
-                if(current_state == STATE_REQUEST_SENT) {
-                    current_block = ((DATA_Packet *) packet)->block_num;
-                    memcpy(transfer_file->current_data, ((DATA_Packet *)packet)->data, DATA_SIZE);
+                
+                data_size = bytes_received - DATA_OFFSET;
 
-                    num_bytes = file_write_next(transfer_file, DATA_SIZE);
-
-                }
-                // ACK sent for previous block
+                current_block = ((DATA_Packet *) packet)->block_num;
+                memcpy(transfer_file->current_data, ((DATA_Packet *)packet)->data, data_size);
+                num_bytes = file_write_next(transfer_file, data_size);
 
                 // Send ACK for this packet
                 free(packet);
@@ -122,7 +119,16 @@ void main(int argc, char *argv[])
                 ACK_Packet_construct(packet, OP_ACK, current_block);
                 Packet_set_message(packet);
                 send_packet(packet, sock_fd, &serv_addr);
-                op_complete = 1;
+
+                current_state = STATE_WAITING_DATA;
+                if(data_size < DATA_SIZE) {
+                    op_complete = 1;
+                    current_state = STATE_COMPLETE;
+                }
+                else {
+                    current_state = STATE_WAITING_DATA; 
+                }
+
                 break;
 
             case 4: // ACK
@@ -130,7 +136,8 @@ void main(int argc, char *argv[])
                 // Check that ACK was for the last block sent
                 if((((ACK_Packet *)packet)->block_num == 0) && (current_block != ((ACK_Packet *)packet)->block_num)) {
                     // ACK not for last block sent or request packet
-                    return;
+                    printf("block_num: %d\tcurrent_block: %d\n", ((ACK_Packet *)packet)->block_num , current_block);
+                    break;
                 }
 
                 // Request sent for write, block # should be 0
@@ -144,7 +151,7 @@ void main(int argc, char *argv[])
                 // Send next packet of DATA
                 num_bytes = file_read_next(transfer_file);
                 packet = Packet_init(OP_DATA);
-                DATA_Packet_construct(packet, OP_DATA, ++current_block, transfer_file->current_data);
+                DATA_Packet_construct(packet, OP_DATA, ++current_block, transfer_file->current_data, num_bytes);
                 Packet_set_message(packet);
                 send_packet(packet, sock_fd, &serv_addr);
                 current_state = STATE_WAITING_ACK;
@@ -166,9 +173,6 @@ void main(int argc, char *argv[])
         // update File_Container current_data
         memset(transfer_file->current_data, 0, num_bytes);
         //memcpy();
-
-
-
     }
 
     file_close(transfer_file);

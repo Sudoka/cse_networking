@@ -4,6 +4,8 @@
 //
 //==============================================================================
 
+#define DEBUG 1
+
 #define SERVER_PORT 60006
 #define TIMEOUT     10
 #define SERVER_ADDR "127.0.0.1"
@@ -26,15 +28,18 @@
 #define STATE_REQUEST_SENT  701
 #define STATE_WAITING_ACK   702
 #define STATE_WAITING_DATA  703
-#define STATE_WAITING_A     704
+#define STATE_COMPLETE      704
 
-#define DEBUG 0
+#define DATA_OFFSET 4
+#define ERROR_OFFSET 4
+
 
 //================================================================================
 // Packet
 //================================================================================
 typedef struct {
     unsigned short opcode;
+    int size;
     char message[516];
     
 } Packet;
@@ -45,6 +50,7 @@ typedef struct {
 typedef struct {
     // Parent fields
     unsigned short opcode;
+    int size;
     char message[516];
 
     // RWRQ fields
@@ -59,6 +65,7 @@ typedef struct {
 typedef struct {
     // Parent fields
     unsigned short opcode;
+    int size;
     char message[516];
 
     // DATA fields
@@ -73,6 +80,7 @@ typedef struct {
 typedef struct {
     // Parent fields
     unsigned short opcode;
+    int size;
     char message[516];
 
     // ACK fields
@@ -87,6 +95,7 @@ typedef struct {
 typedef struct {
     // Parent fields
     unsigned short opcode;
+    int size;
     char message[516];
 
     // ERROR fields
@@ -100,7 +109,9 @@ typedef struct {
 //================================================================================
 typedef struct {
     FILE * fp;
+    char filename[FILENAME_LENGTH];
     int count;
+    int current_size;
     char current_data[DATA_SIZE];
 } File_Container;
 
@@ -112,21 +123,21 @@ typedef struct {
 Packet * Packet_init(unsigned short opcode);
 void RWRQ_Packet_construct_msg(Packet * thisP, unsigned short opcode, char * message);
 void RWRQ_Packet_construct(Packet * thisP, unsigned short opcode, char * fname, char * mode);
-void DATA_Packet_construct_msg(Packet * thisP, unsigned short opcode, char * message);
-void DATA_Packet_construct(Packet * thisP, unsigned short opcode, unsigned short b_num, char * data);
+void DATA_Packet_construct_msg(Packet * thisP, unsigned short opcode, char * message, int size);
+void DATA_Packet_construct(Packet * thisP, unsigned short opcode, unsigned short b_num, char * data, int size);
 void ACK_Packet_construct_msg(Packet * thisP, unsigned short opcode, char * message);
 void ACK_Packet_construct(Packet * thisP, unsigned short opcode, unsigned short b_num);
 void ERROR_Packet_construct_msg(Packet * thisP, unsigned short opcode, char * message);
 void ERROR_Packet_construct(Packet * thisP, unsigned short opcode, unsigned short e_code, char * error_msg);
 
 // Message Parsing
-Packet * create_packet_from_message(char * message);
+Packet * create_packet_from_message(char * message, int size);
 unsigned short read_message_opcode(char * message);
 unsigned short read_message_block_num(char * message);
 unsigned short read_message_error_code(char * message);
 char * read_message_filename(char * message);
-char * read_message_mode(char * message);
-char * read_message_data(char * message);
+char * read_message_mode(char * message, int filename_size);
+char * read_message_data(char * message, int size);
 char * read_message_error_msg(char * message);
 
 // FILE

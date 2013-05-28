@@ -4,10 +4,16 @@ TODO
     - Have size field updated when the struct is populated/changed
     - Change sendto sizes to be this size so every packet is not 516 bytes
 - Change 'r' and 'w' to opcode
+- Server cannot complete second request
+- Add changes to RWRQ_Packet_construct to other construct methods
+- Consider combining all construct methods
+- Get rid of #define sizes in all read_message functions
 Notes
 --------------------------------------------------------------------------------
 - Network Order = Big Endian
 - Store numeric fields in Little Endian in struct, convert to Big Endian when populating the message field
+
+- jobs | kill %1
 
 Functions
 --------------------------------------------------------------------------------
