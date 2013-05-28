@@ -142,8 +142,8 @@ char * read_message_error_msg(char * message);
 
 // FILE
 File_Container * file_open(char * filename, char op);
-int file_read_next(File_Container * this_file);
-int file_write_next(File_Container * this_file, int length);
+int file_read_next(File_Container * this_file, int read_len);
+int file_write_next(File_Container * this_file, int write_len);
 int file_get_size(File_Container * this_file);
 
 // Socket

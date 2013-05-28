@@ -328,6 +328,7 @@ unsigned short read_message_error_code(char * message)
 //================================================================================
 char * read_message_filename(char * message)
 {
+    // TODO: Add free for this malloc
     char * filename = malloc(FILENAME_LENGTH + 1);
     
     strcpy(filename, message + 2);
@@ -345,8 +346,8 @@ char * read_message_filename(char * message)
 //================================================================================
 char * read_message_mode(char * message, int filename_size)
 {
+    // TODO: Add free for this malloc
     char * mode = malloc(FILENAME_LENGTH + 1);
-    // TODO: Memory leak?
     
     int offset; 
     offset = filename_size + 2 + 1;
@@ -365,19 +366,19 @@ char * read_message_mode(char * message, int filename_size)
 //================================================================================
 char * read_message_data(char * message, int data_size)
 {
+    // TODO: Add free for this malloc
     char * data = malloc(data_size + 1);
-    // TODO: Memory leak?
-    int offset = MESSAGE_SIZE - DATA_SIZE; 
+
     if(!data_size) {
         data[0] = 0;
     }
     else {
-        memcpy(data, message + (MESSAGE_SIZE - DATA_SIZE), data_size);
+        memcpy(data, message + DATA_OFFSET, data_size);
     }
 
     if(DEBUG) {
         printf("\t[DEBUG] read_message_data\n");
-        printf("\t\toffset: %d\n", offset);
+        printf("\t\toffset: %d\n", DATA_OFFSET);
         printf("\t\tdata: %s\n", data);
     }
 
@@ -391,11 +392,13 @@ char * read_message_data(char * message, int data_size)
 //================================================================================
 char * read_message_error_msg(char * message)
 {
+    // TODO: Add free for this malloc
     char * error_msg = malloc(ERROR_LENGTH + 1);
     
     int offset; 
     offset = strlen(message + 2) + 2 + 1;
-    strcpy(error_msg, message + (MESSAGE_SIZE - DATA_SIZE));
+    strcpy(error_msg, message + DATA_OFFSET);
+
     // TODO change something here
     if(DEBUG) printf("\t[DEBUG] read_message_error_msg\terror_msg: %s\n", error_msg);
 
@@ -409,18 +412,8 @@ char * read_message_error_msg(char * message)
 //================================================================================
 File_Container * file_open(char * filename, char op)
 {
-    /*
-    char op;
-    if(opcode == OP_RRQ)
-        op = 'r';
-    else if(opcode == OP_WRQ)
-        op = 'w';
-    else {
-        printf("Error: invalid operation\n");
-        exit(5);
-    }
-    */
     if(DEBUG) printf("\t[DEBUG] opening file: %s\top: %c\n", filename, op);
+
     File_Container * new_file = malloc(sizeof(File_Container));
     memset(new_file, 0, sizeof(File_Container));
 
@@ -444,8 +437,8 @@ File_Container * file_open(char * filename, char op)
 void file_close(File_Container * this_file)
 {
     if(DEBUG) printf("\t[DEBUG] closing file: %s\n", this_file->filename);
-    fclose(this_file->fp);
 
+    fclose(this_file->fp);
     free(this_file);
 }
 
@@ -454,12 +447,12 @@ void file_close(File_Container * this_file)
 //  file_read_next
 //
 //================================================================================
-int file_read_next(File_Container * this_file)
+int file_read_next(File_Container * this_file, int read_len)
 {
     int bytes;
     memset(this_file->current_data, 0, sizeof(this_file->current_data));
     
-    bytes = fread(this_file->current_data, sizeof(char), DATA_SIZE, this_file->fp);
+    bytes = fread(this_file->current_data, sizeof(char), read_len, this_file->fp);
     if(DEBUG) printf("\t[DEBUG]file_read_next()\tbytes read: %d\n", bytes);
     return bytes;
 }
@@ -469,10 +462,10 @@ int file_read_next(File_Container * this_file)
 //  file_write_next
 //
 //================================================================================
-int file_write_next(File_Container * this_file, int length)
+int file_write_next(File_Container * this_file, int write_len)
 {
     int bytes;
-    bytes = fwrite(this_file->current_data, sizeof(char), length, this_file->fp);
+    bytes = fwrite(this_file->current_data, sizeof(char), write_len, this_file->fp);
     this_file->current_size = bytes;
 
     if(DEBUG) printf("\t[DEBUG]file_write_next()\tbytes written: %d\n", bytes);

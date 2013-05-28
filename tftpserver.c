@@ -93,7 +93,7 @@ void process_message(char * message, int bytes_received, int sock_fd, struct soc
             last_packet_sent = 0;
 
             // Send first packet of DATA
-            num_bytes = file_read_next(transfer_file); 
+            num_bytes = file_read_next(transfer_file, DATA_SIZE); 
             response_packet = Packet_init(OP_DATA);
             DATA_Packet_construct(response_packet, OP_DATA, ++current_block, transfer_file->current_data, num_bytes);
             Packet_set_message(response_packet);
@@ -163,7 +163,7 @@ void process_message(char * message, int bytes_received, int sock_fd, struct soc
             }
             else {
                 // Send next packet of DATA
-                num_bytes = file_read_next(transfer_file); 
+                num_bytes = file_read_next(transfer_file, DATA_SIZE); 
             }
 
             if(num_bytes < DATA_SIZE) {

@@ -9,6 +9,7 @@ TODO
 - Consider combining all construct methods
 - Get rid of #define sizes in all read_message functions
 - Move process_message to tftp.c and have both programs use it
+- add size checking in read message functions to b assured tbat we do not try to read from an address that is not part od the packet
 
 Notes
 --------------------------------------------------------------------------------

@@ -156,7 +156,7 @@ void main(int argc, char *argv[])
                 }
                 else {
                     // Send next packet of DATA
-                    num_bytes = file_read_next(transfer_file);
+                    num_bytes = file_read_next(transfer_file, DATA_SIZE);
                 }
 
                 if(num_bytes < DATA_SIZE) {
