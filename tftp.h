@@ -4,7 +4,7 @@
 //
 //==============================================================================
 
-#define DEBUG 0
+#define DEBUG 1
 
 #define SERVER_PORT 60006
 #define TIMEOUT     10
