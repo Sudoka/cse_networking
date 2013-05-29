@@ -5,6 +5,7 @@
 //==============================================================================
 
 #define DEBUG 1
+#define DEBUG_STREAM stderr
 
 #define SERVER_PORT 60006
 #define TIMEOUT     10
