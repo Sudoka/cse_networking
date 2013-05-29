@@ -97,27 +97,29 @@ void Packet_set_message(Packet * packet)
 //  Packet_display_string
 //
 //================================================================================
-void Packet_display_string(Packet * packet)
+char * Packet_display_string(Packet * packet, char * string)
 {
     switch(packet->opcode) {
         case 1:
-            printf("RRQ\tfilename: %s\tsize: %d", ((RWRQ_Packet *)packet)->filename, packet->size);
+            sprintf(string, "RRQ\tfilename: %s\tsize: %d", ((RWRQ_Packet *)packet)->filename, packet->size);
             break;
         case 2:
-            printf("WRQ\tfilename: %s\tsize: %d", ((RWRQ_Packet *)packet)->filename, packet->size);
+            sprintf(string, "WRQ\tfilename: %s\tsize: %d", ((RWRQ_Packet *)packet)->filename, packet->size);
             break;
         case 3:
-            printf("DATA\tblock #: %d\t\tsize: %d", ((DATA_Packet *)packet)->block_num, packet->size);
+            sprintf(string, "DATA\tblock #: %d\t\tsize: %d", ((DATA_Packet *)packet)->block_num, packet->size);
             break;
         case 4:
-            printf("ACK\tblock #: %d\t\tsize: %d", ((ACK_Packet *)packet)->block_num, packet->size);
+            sprintf(string, "ACK\tblock #: %d\t\tsize: %d", ((ACK_Packet *)packet)->block_num, packet->size);
             break;
         case 5:
-            printf("ERROR\terror_code: %d\terror_message: %s\t\tsize: %d", ((ERROR_Packet *)packet)->error_code, ((ERROR_Packet *)packet)->error_message, packet->size);
+            sprintf(string, "ERROR\terror_code: %d\terror_message: %s\t\tsize: %d", ((ERROR_Packet *)packet)->error_code, ((ERROR_Packet *)packet)->error_message, packet->size);
             break;
         default:
             break;
     }
+
+    return string;
 }
 
 
@@ -505,49 +507,6 @@ int file_bytes_remaining(File_Container * this_file)
     return size - current;
 }
 
-
-//================================================================================
-//
-//  print_packet
-//
-//================================================================================
-void print_packet(Packet * packet)
-{
-    switch(packet->opcode) {
-        case 1:
-        case 2:
-            printf("RWRQ_Packet\n");
-            printf("\topcode:\t\t%2u\n", ((RWRQ_Packet *) packet)->opcode);
-            printf("\tmessage:\t%s\n", ((RWRQ_Packet *) packet)->message);
-            printf("\tfilename:\t%s\n", ((RWRQ_Packet *) packet)->filename);
-            printf("\tmode:\t\t%s\n", ((RWRQ_Packet *) packet)->mode);
-            break;
-        case 3:
-            printf("DATA_Packet\n");
-            printf("\topcode:\t\t%2u\n", ((DATA_Packet *) packet)->opcode);
-            printf("\tmessage:\t%s\n", ((DATA_Packet *) packet)->message);
-            printf("\tblock_num:\t%2u\n", ((DATA_Packet *) packet)->block_num);
-            printf("\tdata:\t\t%s\n", ((DATA_Packet *) packet)->data);
-            break;
-        case 4:
-            printf("ACK_Packet\n");
-            printf("\topcode:\t\t%2u\n", ((ACK_Packet *) packet)->opcode);
-            printf("\tmessage:\t%s\n", ((ACK_Packet *) packet)->message);
-            printf("\tblock_num:\t%2u\n", ((ACK_Packet *) packet)->block_num);
-            break;
-        case 5:
-            printf("ERROR_Packet\n");
-            printf("\topcode:\t\t%2u\n", ((ERROR_Packet *) packet)->opcode);
-            printf("\tmessage:\t%s\n", ((ERROR_Packet *) packet)->message);
-            printf("\terror_code:\t%2u\n", ((ERROR_Packet *) packet)->error_code);
-            printf("\terror_message:\t%s\n", ((ERROR_Packet *) packet)->error_message);
-            break;
-        default:
-            break;
-
-    }
-}
-
 //================================================================================
 //
 //  setup_socket
@@ -589,11 +548,9 @@ int setup_socket(char * address, int port)
 //================================================================================
 int send_packet(Packet * packet, int sock_fd, struct sockaddr * serv_addr)
 {
+    char string[STRING_BUFFER];
     int bytes = 0;
-    printf("sending:\t");
-    Packet_display_string(packet);
-    printf("\n");
-
+    printf("sending:\t%s\n", Packet_display_string(packet, (char *) &string));
 
     bytes = sendto(sock_fd, packet->message, packet->size, 0, serv_addr, sizeof(*serv_addr));
 
@@ -606,3 +563,160 @@ int send_packet(Packet * packet, int sock_fd, struct sockaddr * serv_addr)
 
     return bytes;
 }
+
+//================================================================================
+//
+//  process_message 
+//
+//================================================================================
+void process_message(char * message, int bytes_received, int sock_fd, struct sockaddr * addr)
+{
+    int num_bytes;
+    int data_size;
+    char string[STRING_BUFFER];
+
+    Packet * packet;
+    Packet * response_packet;
+
+    extern int current_state;
+    extern int current_block;
+    extern File_Container * transfer_file;
+
+    // Create packet structure from message 
+    packet = create_packet_from_message(message, bytes_received);
+
+    if(DEBUG) printf("[DEBUG] process_message()\tbytes received: %d\n", bytes_received);
+
+    printf("receiving:\t%s\n", Packet_display_string(packet, (char *) &string));
+
+    switch(packet->opcode) {
+        case 1: // RRQ
+            
+            // Check for ready state
+            if(current_state != STATE_READY) {
+                printf("not able to begin new request\n");
+                break;
+            }
+
+            // Open file for reading
+            transfer_file = file_open(((RWRQ_Packet *)packet)->filename, 'r');
+            current_block = 0;
+
+            // Read first block from file
+            num_bytes = file_read_next(transfer_file, DATA_SIZE); 
+
+            // Send first packet of DATA
+            response_packet = Packet_init(OP_DATA);
+            DATA_Packet_construct(response_packet, OP_DATA, ++current_block, transfer_file->current_data, num_bytes);
+            Packet_set_message(response_packet);
+            send_packet(response_packet, sock_fd, addr);
+
+            current_state = STATE_WAITING_ACK;
+            
+            break;
+        case 2: // WRQ
+
+            // Check for ready state
+            if(current_state != STATE_READY) {
+                printf("not able to begin new request\n");
+                break;
+            }
+
+            transfer_file = file_open(((RWRQ_Packet *)packet)->filename, 'a');
+            current_block = 0;
+
+            // Send ACK for this packet
+            response_packet = Packet_init(OP_ACK);
+            ACK_Packet_construct(response_packet, OP_ACK, current_block);
+            Packet_set_message(response_packet);
+            send_packet(response_packet, sock_fd, addr);
+
+            current_state = STATE_WAITING_DATA;
+
+            break;
+
+        case 3: // DATA
+
+            data_size = bytes_received - DATA_OFFSET;
+
+            current_block = ((DATA_Packet *) packet)->block_num;
+            memcpy(transfer_file->current_data, ((DATA_Packet *)packet)->data, data_size);
+
+            num_bytes = file_write_next(transfer_file, data_size);
+
+            // Send ACK for this packet
+            response_packet = Packet_init(OP_ACK);
+            ACK_Packet_construct(response_packet, OP_ACK, current_block);
+            Packet_set_message(response_packet);
+            send_packet(response_packet, sock_fd, addr);
+
+            // If last packet, close file, set state
+            if(data_size < DATA_SIZE) {
+                current_state = STATE_COMPLETE;
+                printf("file complete\n\n");
+                file_close(transfer_file);
+            }
+            else {
+                current_state = STATE_WAITING_ACK;
+            }
+
+            break;
+
+        case 4: // ACK
+
+            // Check that ACK was for the last block sent
+            if((((ACK_Packet *) packet)->block_num == 0) && (current_block != ((ACK_Packet *) packet)->block_num)) {
+                break;
+            }
+
+            if(current_state == STATE_WAITING_LAST) {
+                if(file_bytes_remaining(transfer_file) != 0) {
+                    printf("error: last_packet_sent flag set but bytes remain in file\n");
+                }
+
+                current_state = STATE_COMPLETE;
+                printf("file complete\n\n");
+
+                break;
+            }
+
+            // Check if file is done
+            if(file_bytes_remaining(transfer_file) <= 0) {
+                // send empty final packet
+                num_bytes = 0;
+                memset(transfer_file->current_data, 0, DATA_SIZE);    
+            }
+            else {
+                // Send next packet of DATA
+                num_bytes = file_read_next(transfer_file, DATA_SIZE); 
+            }
+
+            // Send next packet
+            response_packet = Packet_init(OP_DATA);
+            DATA_Packet_construct(response_packet, OP_DATA, ++current_block, transfer_file->current_data, num_bytes);
+            Packet_set_message(response_packet);
+            send_packet(response_packet, sock_fd, addr);
+
+            if(num_bytes < DATA_SIZE) {
+                current_state = STATE_WAITING_LAST;
+            }
+            else {
+                current_state = STATE_WAITING_ACK;
+            }
+
+            break;
+
+        case 5: // ERROR
+            break;
+
+        default:
+            break;
+    }
+
+    free(packet);
+    packet = NULL;
+
+    free(response_packet);
+    response_packet = NULL;
+}
+

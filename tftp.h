@@ -4,7 +4,7 @@
 //
 //==============================================================================
 
-#define DEBUG 1
+#define DEBUG 0
 
 #define SERVER_PORT 60006
 #define TIMEOUT     10
@@ -15,6 +15,7 @@
 #define FILENAME_LENGTH 500
 #define MODE_LENGTH     8
 #define ERROR_LENGTH    512
+#define STRING_BUFFER   500
 
 #define OP_RRQ   1
 #define OP_WRQ   2
@@ -29,6 +30,7 @@
 #define STATE_WAITING_ACK   702
 #define STATE_WAITING_DATA  703
 #define STATE_COMPLETE      704
+#define STATE_WAITING_LAST  705
 
 #define DATA_OFFSET 4
 #define ERROR_OFFSET 4
@@ -121,6 +123,7 @@ typedef struct {
 
 // Packet
 Packet * Packet_init(unsigned short opcode);
+char * Packet_display_string(Packet * packet, char * string);
 void RWRQ_Packet_construct_msg(Packet * thisP, unsigned short opcode, char * message);
 void RWRQ_Packet_construct(Packet * thisP, unsigned short opcode, char * fname, char * mode);
 void DATA_Packet_construct_msg(Packet * thisP, unsigned short opcode, char * message, int size);
@@ -151,6 +154,7 @@ int setup_socket(char * address, int port);
 
 // Utility
 void write_debug(char * message);
-void print_packet(Packet * packet);
 
+// Server/Client Operation
+void process_message(char * message, int bytes_received, int sock_fd, struct sockaddr * addr);
 
