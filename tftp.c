@@ -146,6 +146,9 @@ void RWRQ_Packet_construct_msg(Packet * packet, unsigned short opcode, char * me
         printf("\t\tfilename:\t%s\tsize: %d\n", filename, strlen(filename));
         printf("\t\tmode:\t\t%s\tsize: %d\n", mode, strlen(mode));
     }
+
+    free(filename);
+    free(mode);
 }
 
 void RWRQ_Packet_construct(Packet * packet, unsigned short opcode, char * filename, char * mode)
@@ -190,6 +193,8 @@ void DATA_Packet_construct_msg(Packet * packet, unsigned short opcode, char * me
         printf("\t\tblock_num:\t%02u\tsize: %d\n", block_num, sizeof(opcode));
         printf("\t\tdata:\t\t\tsize: %d\n%s\n", data_size, data);
     }
+
+    free(data);
 }
 
 void DATA_Packet_construct(Packet * packet, unsigned short opcode, unsigned short b_num, char * data, int data_size)
@@ -271,6 +276,8 @@ void ERROR_Packet_construct_msg(Packet * packet, unsigned short opcode, char * m
         printf("\t\terror_code:\t%02u\tsize: %d\n", error_code, sizeof(error_code));
         printf("\t\terror_msg:\t%s\tsize: %d\n", error_msg, strlen(error_msg));
     }
+
+    free(error_msg);
 }
 
 void ERROR_Packet_construct(Packet * packet, unsigned short opcode, unsigned short e_code, char * error_msg)

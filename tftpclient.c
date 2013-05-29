@@ -75,7 +75,6 @@ void main(int argc, char *argv[])
     free(packet);
     packet = NULL;
 
-
     // Setup transfer file
     
     if(client_op == OP_RRQ) {

@@ -1,9 +1,5 @@
 TODO
 --------------------------------------------------------------------------------
-- Add size field to Packet structs
-    - Have size field updated when the struct is populated/changed
-    - Change sendto sizes to be this size so every packet is not 516 bytes
-- Get rid of #define sizes in all read_message functions
 - add size checking in read message functions to b assured tbat we do not try to read from an address that is not part od the packet
 
 Notes
